@@ -9,6 +9,7 @@ import {
 import { PatternData } from '../../pattern/data/PatternData';
 import { PatternType } from '../../pattern/PatternType';
 import { TypeData } from '../../pattern/data/PatternData';
+import { TokenModifiers } from '../../TokenModifiers';
 export class SkriptFunction extends SkriptSection {
 	//the name of this function
 	name: string;
@@ -27,12 +28,13 @@ export class SkriptFunction extends SkriptSection {
 			const argumentTypes: SkriptTypeState[] = [];
 			const argumentPositions: Location[] = [];
 			this.name = result[1];
+			context.addToken(TokenTypes.function, "function ".length, this.name.length, TokenModifiers.definition);
 			let regexPattern = this.name + '\\(';
 			if (result[2].trim().length > 0) {
 				const argumentIndex = "function ".length + result[1].length + "(".length;
 				const specializedContext = context.push(argumentIndex, result[2].length);
 				specializedContext.getHierarchy();
-				const argumentStrings = specializedContext.splitHierarchically(/,/g); //result[2].split(/,|and/);
+				const argumentStrings = specializedContext.splitHierarchically(/( )?,( )?/g); //result[2].split(/,|and/);
 
 
 				for (const currentArgumentString of argumentStrings) {

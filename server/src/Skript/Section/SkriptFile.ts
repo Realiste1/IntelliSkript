@@ -28,6 +28,7 @@ import { SkriptSection } from "./skriptSection/SkriptSection";
 import { SemanticTokenLine, UnOrderedSemanticTokensBuilder } from './UnOrderedSemanticTokensBuilder';
 import { ReflectSectionSection } from './reflect/ReflectSectionSection';
 import { SkriptAliasesSection } from './SkriptAliasesSection';
+import { SkriptVariablesSection } from './SkriptVariablesSection';
 
 
 
@@ -120,6 +121,9 @@ export class SkriptFile extends SkriptSection {
 		}
 		else if (sectionKeyword == "aliases") {
 			s = new SkriptAliasesSection(this, context);
+		}
+		else if(sectionKeyword == "variables"){
+			s = new SkriptVariablesSection(this, context);
 		}
 		else {
 			const result = /^((local )?((plural|non-single) )?expression)( .*|)/.exec(context.currentString);

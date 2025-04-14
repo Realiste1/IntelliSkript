@@ -1,0 +1,140 @@
+{
+	"$schema": "vscode://schemas/color-theme",
+	"name": "IntelliSkript",
+	"type": "dark modern",
+	"author": "John Heikens",
+	"semanticClass": "theme.dark.IntelliSkript",
+	"settings": {},
+	"uuid": "F8BE53EE-41FA-42B6-A1CF-30FA9825D5CB",
+	"colorSpaceName": "sRGB",
+	"comment": "intelligent language server based tokenization!",
+	"semanticHighlighting": true,
+	"tokenColors": [
+		{
+			"scope": "comment",
+			"settings": {
+				"foreground": "#6f75d1",
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"scope": "variable",
+			"settings": {
+				"foreground": "#62db99",
+				"fontStyle": "bold"
+			}
+		},
+		{
+			"scope": "entity.name.type",
+			"settings": {
+				"foreground": "#9e61ff"
+			}
+		},
+		{
+			"scope": "entity.name.function",
+			"settings": {
+				"foreground": "#ffa600"
+			}
+		},
+		{
+			"scope": "string",
+			"settings": {
+				"foreground": "#ffffff"
+			}
+		}
+	],
+	"semanticTokenColors": {
+		"keyword": "#f371ff",
+		"regexp": {
+			"foreground": "#fc3bdc",
+			"bold": true
+		},
+		"event": {
+			"foreground": "#08c221",
+			"bold": true
+		},
+		//both declarations and definitions are italic.
+		"*.definition": {
+			"italic": true
+		},
+		"*.declaration": {
+			"italic": true
+		},
+		"effect": {
+			"foreground": "#ff7300",
+			"bold": true
+		},
+		"expression": {
+			"foreground": "#00ffea",
+			"bold": true
+		},
+		"namespace": {
+			"foreground": "#3c66c0",
+			"bold": true
+		},
+		"*.bukkit_0": {
+			"foreground": "#000000"
+		},
+		"*.bukkit_1": {
+			"foreground": "#0000AA"
+		},
+		"*.bukkit_2": {
+			"foreground": "#00AA00"
+		},
+		"*.bukkit_3": {
+			"foreground": "#00AAAA"
+		},
+		"*.bukkit_4": {
+			"foreground": "#AA0000"
+		},
+		"*.bukkit_5": {
+			"foreground": "#AA00AA"
+		},
+		"*.bukkit_6": {
+			"foreground": "#FFAA00"
+		},
+		"*.bukkit_7": {
+			"foreground": "#AAAAAA"
+		},
+		"*.bukkit_8": {
+			"foreground": "#555555"
+		},
+		"*.bukkit_9": {
+			"foreground": "#5555FF"
+		},
+		"*.bukkit_a": {
+			"foreground": "#55FF55"
+		},
+		"*.bukkit_b": {
+			"foreground": "#55FFFF"
+		},
+		"*.bukkit_c": {
+			"foreground": "#FF5555"
+		},
+		"*.bukkit_d": {
+			"foreground": "#FF55FF"
+		},
+		"*.bukkit_e": {
+			"foreground": "#FFFF55"
+		},
+		"*.bukkit_f": {
+			"foreground": "#FFFFFF"
+		},
+		"*.bukkit_l": {
+			"bold": true
+		},
+		"*.bukkit_m": {
+			"strikethrough": true
+		},
+		"*.bukkit_n": {
+			"underline": true
+		},
+		"*.bukkit_o": {
+			"italic": true
+		}
+	},
+	"colors": {
+		"editor.foreground": "#ff2600",
+		"editor.background": "#171717"
+	}
+}

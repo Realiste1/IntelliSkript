@@ -63,7 +63,7 @@ export class SkriptContext {
 	}
 
 	//CAUTION! HIGHLIGHTING SHOULD BE DONE IN ORDER
-	addToken(type: TokenTypes, relativePosition = 0, length = this.currentString.length - relativePosition, modifiers: TokenModifiers[] = []): void {
+	addToken(type: TokenTypes, relativePosition = 0, length = this.currentString.length - relativePosition, ...modifiers: TokenModifiers[]): void {
 		const absolutePosition = this.currentDocument.positionAt(this.currentPosition + relativePosition);
 		this.parseResult.tokens.push(new SemanticToken(absolutePosition, length, type, SemanticToken.modToFlags(modifiers)));
 	}
@@ -214,32 +214,36 @@ export class SkriptContext {
 
 	}
 	hierarchicFind(toFind: RegExp, start = 0, end = this.currentString.length): RegExpExecArray[] {
+		//start will be modified! start is the start of the substring to search in
 		const results: RegExpExecArray[] = [];
 		if (this.hierarchy) {
-			let index = start;
 			let childIndex = 0;
-			let currentResult;
+			let currentResult : RegExpExecArray | null;
 			while (childIndex < this.hierarchy.children.length) {
 				let nextSubIndex = this.hierarchy.children[childIndex].start;
-				if (nextSubIndex > index) {
+				if (nextSubIndex > start) {
 					if (nextSubIndex > end) {
 						nextSubIndex = end;
 					}
-					while ((currentResult = toFind.exec(this.currentString.substring(index, nextSubIndex)))) {
-						currentResult.index += index;
+					const searchString = this.currentString.substring(start, nextSubIndex);
+					while ((currentResult = toFind.exec(searchString))) {
+						currentResult.index += start;
 						results.push(currentResult);
 					}
+					toFind.lastIndex = 0;
 					if (nextSubIndex == end) {
 						return results;
 					}
 				}
-				index = this.hierarchy.children[childIndex].end + 1;
+				start = this.hierarchy.children[childIndex].end + 1;
 				childIndex++;
 			}
-			while ((currentResult = toFind.exec(this.currentString.substring(index, end)))) {
-				currentResult.index += index;
+			const searchString = this.currentString.substring(start, end);
+			while ((currentResult = toFind.exec(searchString))) {
+				currentResult.index += start;
 				results.push(currentResult);
 			}
+			toFind.lastIndex = 0;
 		}
 
 		return results;
@@ -250,7 +254,7 @@ export class SkriptContext {
 		let currentIndex = start;
 		for (let i = 0; i < indexes.length; i++) {
 			results[i] = { text: this.currentString.substring(currentIndex, indexes[i].index), index: currentIndex };
-			currentIndex = indexes[i].index + indexes[i].length;
+			currentIndex = indexes[i].index + indexes[i][0].length;
 		}
 		results[indexes.length] = { text: this.currentString.substring(currentIndex, end), index: currentIndex };
 		return results;

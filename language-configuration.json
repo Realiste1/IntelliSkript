@@ -4,13 +4,48 @@
 		"decreaseIndentPattern": "decrease indent"
 	},
 	"comments": {
-	  "lineComment": "#",
+		"lineComment": "#",
 	},
 	"autoClosingPairs": [
-		{ "open": "{", "close": "}", "notIn": ["string", "comment"] },
-		{ "open": "[", "close": "]", "notIn": ["string", "comment"] },
-		{ "open": "(", "close": ")", "notIn": ["string", "comment"] },
-		{ "open": "%", "close": "%", "notIn": ["comment"] },
-		{ "open": "\"", "close": "\"", "notIn": ["comment"] },
-	  ],
-  }
+		{
+			"open": "{",
+			"close": "}",
+			"notIn": [
+				"string",
+				"comment"
+			]
+		},
+		{
+			"open": "[",
+			"close": "]",
+			"notIn": [
+				"string",
+				"comment"
+			]
+		},
+		{
+			"open": "(",
+			"close": ")",
+			"notIn": [
+				"string",
+				"comment"
+			]
+		},
+		{
+			"open": "%",
+			"close": "%",
+			"notIn": [
+				"comment"
+			]
+		},
+		{
+			"open": "\"",
+			"close": "\"",
+			"notIn": [
+				"comment"
+			]
+		},
+	],
+	"colorizedBracketPairs": [],
+	"brackets": []
+}

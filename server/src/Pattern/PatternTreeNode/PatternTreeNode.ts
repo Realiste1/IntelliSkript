@@ -8,51 +8,26 @@ export class PatternTreeNode {
 
 	//when the string doesn't continue, we will check the type nodes.
 	typeOrderedChildren: Map<string, PatternTreeNode> = new Map<string, PatternTreeNode>();
-    getTypeChild(type: SkriptTypeSection) {
-        return this.typeOrderedChildren.get(type.getKey());
-    }
+
+	regExpOrderedChildren: PatternTreeNode[] = [];
+	getTypeChild(type: SkriptTypeSection) {
+		return this.typeOrderedChildren.get(type.getKey());
+	}
 	//otherNodes: PatternTreeNode[] = new Array<PatternTreeNode>();
 	//when this can be an end node of a certain pattern, the end node is set. sometimes another pattern continues after this
 	//for example:
 	//say % <- end node
 	//say % to % <- another end node
 	patternsEndedHere: PatternData[] = [];
-	patternKey?: string;
 
 	//compare(_other: PatternTreeNode) {
 	//	return false;
 	//}
 
-	constructor(patternKey?: string) {
-		this.patternKey = patternKey;
-	}
+	// cloning and merging aren't implemented anymore, because when a pattern clones, the efficiency is gone because nodes aren't linked anymore.
+	// so all options would be cloned separately.
+	// we'll just copy the pattern datas instead when merging the pattern trees.
 
-
-	clone(): PatternTreeNode {
-		const clone = new PatternTreeNode();
-		clone.patternKey = this.patternKey;
-		clone.patternsEndedHere = [...this.patternsEndedHere];
-		clone.stringOrderedChildren = new Map<string, PatternTreeNode>();
-		for (const [key, value] of this.stringOrderedChildren) {
-			//this method is definitely not optimized for memory usage as the nodes aren't linked anymore after this
-			//am option would be to have an optimization function which links all identical nodes as references to a single node
-			//the performance of this tree will increase the less memory it uses because the nodes will be placed in the L1 slots instead of the L2 slots for example
-			clone.stringOrderedChildren.set(key, value.clone());
-		}
-		return clone;
-	}
-	merge(other: PatternTreeNode): void {
-		for (const [key, value] of other.stringOrderedChildren) {
-			const k = this.stringOrderedChildren.get(key);
-			if (k) {
-				k.merge(value);
-			}
-			else {
-				this.stringOrderedChildren.set(key, value.clone());
-			}
-		}
-		if (other.patternsEndedHere) {
-			this.patternsEndedHere = other.patternsEndedHere;
-		}
+	constructor() {
 	}
 }

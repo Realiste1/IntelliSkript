@@ -15,13 +15,15 @@
 		"Programming Languages",
 		"Linters",
 		"Formatters",
-		"Snippets"
+		"Snippets",
+		"Themes"
 	],
 	"keywords": [
 		"skript",
 		"intelliskript",
 		"intellisense",
-		"format"
+		"format",
+		"theme"
 	],
 	"engines": {
 		"vscode": "^1.85.0"
@@ -94,6 +96,117 @@
 						"description": "Traces the communication between VS Code and the language server."
 					}
 				}
+			}
+		],
+		"semanticTokenTypes": [
+			{
+				"id": "pattern",
+				"superType": "regexp",
+				"description": "a skript pattern, like set %objects% to %objects%"
+			},
+			{
+				"id": "permission",
+				"superType": "string",
+				"description": "a permission which a player needs to have to execute a command"
+			},
+			{
+				"id": "expression",
+				"superType": "property",
+				"description": "an expression"
+			},
+			{
+				"id": "effect",
+				"superType": "method",
+				"description": "an effect"
+			}
+		],
+		"semanticTokenModifiers": [
+			{
+				"id": "bukkit_0",
+				"description": "Bukkit color code &0"
+			},
+			{
+				"id": "bukkit_1",
+				"description": "Bukkit color code &1"
+			},
+			{
+				"id": "bukkit_2",
+				"description": "Bukkit color code &2"
+			},
+			{
+				"id": "bukkit_3",
+				"description": "Bukkit color code &3"
+			},
+			{
+				"id": "bukkit_4",
+				"description": "Bukkit color code &4"
+			},
+			{
+				"id": "bukkit_5",
+				"description": "Bukkit color code &5"
+			},
+			{
+				"id": "bukkit_6",
+				"description": "Bukkit color code &6"
+			},
+			{
+				"id": "bukkit_7",
+				"description": "Bukkit color code &7"
+			},
+			{
+				"id": "bukkit_8",
+				"description": "Bukkit color code &8"
+			},
+			{
+				"id": "bukkit_9",
+				"description": "Bukkit color code &9"
+			},
+			{
+				"id": "bukkit_a",
+				"description": "Bukkit color code &a"
+			},
+			{
+				"id": "bukkit_b",
+				"description": "Bukkit color code &b"
+			},
+			{
+				"id": "bukkit_c",
+				"description": "Bukkit color code &c"
+			},
+			{
+				"id": "bukkit_d",
+				"description": "Bukkit color code &d"
+			},
+			{
+				"id": "bukkit_e",
+				"description": "Bukkit color code &e"
+			},
+			{
+				"id": "bukkit_f",
+				"description": "Bukkit color code &f"
+			},
+			{
+				"id": "bukkit_b",
+				"description": "Bukkit bold &b"
+			},
+			{
+				"id": "bukkit_m",
+				"description": "Bukkit strikethrough &m"
+			},
+			{
+				"id": "bukkit_n",
+				"description": "Bukkit underline &n"
+			},
+			{
+				"id": "bukkit_o",
+				"description": "Bukkit italic &o"
+			}
+		],
+		"themes": [
+			{
+				"label": "IntelliSkript",
+				"uiTheme": "vs-dark",
+				"path": "./themes/IntelliSkript.json"
 			}
 		]
 	},

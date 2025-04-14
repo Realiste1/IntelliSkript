@@ -78,15 +78,13 @@ export class SkriptSection extends SkriptSectionGroup {
 	/**expects start and length! */
 	parseType(context: SkriptContext, start = 0, length = context.currentString.length - start): TypeData | undefined {
 		const data = this.getTypeData(context.currentString.substring(start, start + length));
-		let modifiers: TokenModifiers[] = [];
 		if (data) {
 			context.addPatternMatch(data, start, start + length);
 		}
 		else {
-			modifiers.push(TokenModifiers.deprecated);
 			context.addDiagnostic(start, length, "cannot recognize type", DiagnosticSeverity.Error);
 		}
-		context.addToken(TokenTypes.type, start, length, modifiers);
+		context.addToken(TokenTypes.type, start, length, ...(data ? [] : [TokenModifiers.deprecated]));
 		return data;
 	}
 
@@ -129,7 +127,7 @@ export class SkriptSection extends SkriptSectionGroup {
 			} else
 				modifiers.push(TokenModifiers.deprecated);
 
-			context.addToken(TokenTypes.type, currentPosition, parts[i].length, modifiers);
+			context.addToken(TokenTypes.type, currentPosition, parts[i].length, ...modifiers);
 			//else {
 			//	//error 'type not recognized' has been added by the getPatternData function already
 			//	return undefined;
@@ -149,9 +147,9 @@ export class SkriptSection extends SkriptSectionGroup {
 	private tokenizeMatch(context: SkriptContext, pattern: TransformedPattern, match: PatternData, matchPatternStart: integer = 0, matchPatternEnd: integer = pattern.pattern.length) {
 		const tokenType = //match.section instanceof SkriptPropertySection ?
 			match.patternType == PatternType.event ? TokenTypes.event :
-				match.returnType.possibleTypes.length ?
-					TokenTypes.property :
-					TokenTypes.method;
+				match.patternType == PatternType.expression ?
+					TokenTypes.expression :
+					TokenTypes.effect;
 
 		/**the point in the pattern to start tokenizing from. will move to the end of submatches if there are any*/
 		let tokenizeFrom = matchPatternStart;
@@ -364,8 +362,8 @@ export class SkriptSection extends SkriptSectionGroup {
 				(currentPatternArguments.length == 1 && pattern.pattern.length == 1) &&
 				//this pattern is just '%'
 				(!isTopNode //we should pass it to the pattern detector above
-					|| mainPatternType == PatternType.effect)//we don't have to evaluate anything
-				) {
+					|| mainPatternType == PatternType.effect || mainPatternType == PatternType.expression)//we don't have to evaluate anything
+			) {
 
 			}
 			else {
@@ -386,19 +384,50 @@ export class SkriptSection extends SkriptSectionGroup {
 		else if ('"{'.includes(currentNode.delimiter)) {
 			const borderSize = currentNode.delimiter == '"' ? 1 : 0;
 			const tokenType = currentNode.delimiter == '"' ? TokenTypes.string : TokenTypes.variable;
+			let modifiers: TokenModifiers[] = [];
 
 			//just tokenize around the already processed child nodes
 			let currentPosition = currentNode.start - borderSize;
+
+			/**start to end!*/
+			const tokenize = (start: integer, end: integer) => {
+				if (currentNode.delimiter == '{') {
+					context.addToken(tokenType, start, end - start);
+				}
+				else {
+					//string
+					//process string and read all bukkit color / format codes
+					let lastIndex = start;
+					for (let index = start; index < end; index++) {
+						if (context.currentString[index] == '&' && index + 1 < end) {
+							let nextChar = context.currentString[index + 1];
+							if (/[0-9a-fl-r]/.test(nextChar)) {
+								if (index > lastIndex) {
+									context.addToken(tokenType, lastIndex, index - lastIndex, ...modifiers);
+									lastIndex = index;
+								}
+								if (nextChar == 'r') {
+									modifiers = [];
+								}
+								//we guarantee the compiler that it's one of the token modifiers
+								modifiers.push(TokenModifiers[("bukkit_" + nextChar) as keyof typeof TokenModifiers]);
+							}
+						}
+					}
+					//we can guarantee there will be something to tokenize here, at least 3 tokens (when the string ends with &c" )
+					context.addToken(tokenType, lastIndex, end - lastIndex, ...modifiers);
+				}
+			}
 
 			for (let i = 0; i < currentNode.children.length; i++) {
 				{
 					//we don't have to do anything with the results of the children (the %%'es)
 					const child = currentNode.children[i];
-					context.addToken(tokenType, currentPosition, child.start - currentPosition);
+					tokenize(currentPosition, child.start);
 					currentPosition = child.end;
 				}
 			}
-			context.addToken(tokenType, currentPosition, currentNode.end + borderSize - currentPosition);
+			tokenize(currentPosition, currentNode.end + borderSize);
 		}
 		return { detectedPattern: foundPattern };
 	}

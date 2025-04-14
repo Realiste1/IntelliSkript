@@ -36,14 +36,14 @@ export class SkriptCommandSection extends SkriptSection {
 		while (m = typeRegex.exec(context.currentString)) {
 			let typeStart = m.index + 1;
 			let typeEnd = typeStart + m[1].length;
-			context.addToken(TokenTypes.regexp, previousIndex, typeStart - previousIndex);
+			context.addToken(TokenTypes.pattern, previousIndex, typeStart - previousIndex);
 			//parse types
 			const parsedTypes = this.parseTypes(context, typeStart, m[1].length);
 			this.patternContainer.addPattern(new PatternData("arg[ument]( |-)" + argumentIndex, "arg(ument)?( |-)" + argumentIndex, context.getLocation(typeStart, m[1].length), PatternType.expression, undefined, [], [], parsedTypes))
 			previousIndex = typeEnd;
 			argumentIndex++;
 		}
-		context.addToken(TokenTypes.regexp, previousIndex);
+		context.addToken(TokenTypes.pattern, previousIndex);
 
 		if (result == null) {
 			context.addDiagnostic(0, context.currentString.length, "cannot recognize this command");

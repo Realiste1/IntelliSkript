@@ -5,7 +5,7 @@ export class TypeNode extends PatternTreeNode {
     type: SkriptTypeSection;
     derivedChildren: Map<string, TypeNode> = new Map<string, TypeNode>();
     constructor(type: SkriptTypeSection) {
-        super('%');
+        super();
         this.type = type;
     }
     //override compare(other : PatternTreeNode) : boolean{

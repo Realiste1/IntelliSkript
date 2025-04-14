@@ -12,7 +12,7 @@ export class SkriptOptionsSection extends SkriptSection {
 			const optionName = context.currentString.substring(0, colonIndex);
 			const optionValue = context.currentString.substring(colonIndex).trim();
 			context.currentSkriptFile?.options.push(new SkriptOption(optionName, optionValue));
-			context.addToken(TokenTypes.variable, 0, colonIndex, [TokenModifiers.readonly, TokenModifiers.static, TokenModifiers.definition])
+			context.addToken(TokenTypes.variable, 0, colonIndex, TokenModifiers.readonly, TokenModifiers.static, TokenModifiers.definition)
 		}
 	}
 }

@@ -14,6 +14,8 @@ import { removeDuplicates } from "./removeDuplicates";
 import { SkriptTypeSection } from '../skript/section/custom/SkriptTypeSection';
 import { TokenModifiers } from '../TokenModifiers';
 import { TypeNode } from './patternTreeNode/TypeNode';
+import { StringNode } from './patternTreeNode/StringNode';
+import { RegExpNode } from './patternTreeNode/RegExpNode';
 
 //flags: U -> ungreedy, g -> global. percentages are escapable with a slash.
 const argumentRegExp = /(?<!\\)\%(.*?)(?<!\\)\%/g;
@@ -136,7 +138,7 @@ export class PatternTree {
 	merge(other: PatternTree): void {
 		this.incompatiblePatterns.push(...other.incompatiblePatterns);
 		this.compatiblePatterns.push(...other.compatiblePatterns);
-		if(this.root){
+		if (this.root) {
 			for (const p of other.compatiblePatterns) {
 				this.addToTree(p);
 			}
@@ -183,7 +185,7 @@ export class PatternTree {
 				let treeElem = undefined;
 				//for each possibility of this pattern, loop over the letters
 				for (let splitNodeIndex = 0; splitNodeIndex < currentNodes.length; splitNodeIndex++) {
-					const currentSplitNode = currentNodes[splitNodeIndex];
+					const currentSplitNode = currentNodes[splitNodeIndex] as StringNode;
 					if ((char == ' ') && ((currentSplitNode.patternKey == ' ') || currentSplitNode == this.root)) {
 						//no double spaces or spaces at the start of the pattern
 						newNodes.push(currentSplitNode);
@@ -219,7 +221,7 @@ export class PatternTree {
 						const currentTreeElem = currentSplitNode.stringOrderedChildren.get(char);
 						if (currentTreeElem == undefined) {
 							if (treeElem == undefined) {
-								treeElem = new PatternTreeNode(char);
+								treeElem = new StringNode(char);
 								newNodes.push(treeElem);
 							}
 							currentSplitNode.stringOrderedChildren.set(char, treeElem);
@@ -239,14 +241,25 @@ export class PatternTree {
 		return currentNodes;
 	}
 
+	static isRegexPattern(pattern: PatternData): boolean {
+		return /\\d\+|(?<!\\)(\+|\*|\.)/.exec(pattern.regexPatternString) !== null;
+	}
+
 	//add a pattern to the tree
-	private addToTree(data: PatternData): void {
+	private addToTree(pattern: PatternData): void {
 		//for debugger
 		if (this.root) {
-			const regExpHierarchy = createRegExpHierarchy(data.regexPatternString);
-			const endNodes = this.addPatternPart(data, [this.root], regExpHierarchy);
-			for (const node of endNodes) {
-				node.patternsEndedHere.push(data);
+			if (PatternTree.isRegexPattern(pattern)) {
+				let node = new RegExpNode(new RegExp(pattern.regexPatternString));
+				node.patternsEndedHere.push(pattern);
+				this.root.regExpOrderedChildren.push(node);
+			}
+			else {
+				const regExpHierarchy = createRegExpHierarchy(pattern.regexPatternString);
+				const endNodes = this.addPatternPart(pattern, [this.root], regExpHierarchy);
+				for (const node of endNodes) {
+					node.patternsEndedHere.push(pattern);
+				}
 			}
 		}
 	}
@@ -396,7 +409,7 @@ export class PatternTree {
 				if (m.index != undefined) {
 					const typeStart = m.index + 1;
 					const typeString = m[1];
-					context.addToken(TokenTypes.regexp, previousTokenEndPos, typeStart - previousTokenEndPos, [TokenModifiers.definition]);
+					context.addToken(TokenTypes.pattern, previousTokenEndPos, typeStart - previousTokenEndPos, TokenModifiers.definition);
 					const result = context.currentSection.parseTypes(context, typeStart, typeString.length);
 					if (result) {
 						expressionArguments.push(result);
@@ -415,7 +428,7 @@ export class PatternTree {
 					argumentPositions.push(context.getLocation(typeStart, typeString.length));
 				}
 			}
-			context.addToken(TokenTypes.regexp, previousTokenEndPos, undefined, [TokenModifiers.definition]);
+			context.addToken(TokenTypes.pattern, previousTokenEndPos, undefined, TokenModifiers.definition);
 			if (shouldReturn) return;
 
 			let fixedString = convertSkriptPatternToRegExp(context.currentString, Hierarchy);
@@ -453,15 +466,17 @@ export class PatternTree {
 	}
 
 	addPattern(pattern: PatternData) {
-		if (/\\d\+|(?<!\\)(\+|\*|\.)/.exec(pattern.regexPatternString)) {
-			//these patterns are not compatible with the tree
-			//these patterns are roughly always patterns which we don't need anyways, because they don't provide intelligent support.
-			//for example: expr-1 shouldn't be available in each context
-			//the loop-value shouldn't be available in each context either
-			//etc.
-			if (pattern.definitionLocation.uri.includes('IntelliSkript.sk')) {
-				//defined by intelliskript, this pattern should be safe to use
-				this.incompatiblePatterns.push(pattern);
+		//these patterns are not compatible with the tree
+		//these patterns are roughly always patterns which we don't need anyways, because they don't provide intelligent support.
+		//for example: expr-1 shouldn't be available in each context
+		//the loop-value shouldn't be available in each context either
+		//etc.
+		if (!PatternTree.isRegexPattern(pattern)
+			//when defined by intelliskript, the pattern should be safe to use
+			|| pattern.definitionLocation.uri.includes('IntelliSkript.sk')) {
+			this.compatiblePatterns.push(pattern);
+			if (this.root) {
+				this.addToTree(pattern);
 			}
 		}
 		//if (pattern.skriptPatternString[0] == '<' && pattern.skriptPatternString[pattern.skriptPatternString.length - 1] == '>') {
@@ -470,10 +485,6 @@ export class PatternTree {
 		//	this.incompatiblePatterns.push(pattern);
 		//}
 		else {
-			this.compatiblePatterns.push(pattern);
-			if (this.root) {
-				this.addToTree(pattern);
-			}
 		}
 	}
 }

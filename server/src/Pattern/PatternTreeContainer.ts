@@ -10,6 +10,7 @@ import { MatchProgress } from './match/MatchProgress';
 import { MatchResult } from './match/matchResult';
 import { PatternMatch } from './match/PatternMatch';
 import { PatternTreeNode } from './patternTreeNode/PatternTreeNode';
+import { RegExpNode } from "./patternTreeNode/RegExpNode";
 
 export class PatternTreeContainer implements PatternMatcher {
 	/** a list of expression trees, this is to save time (to not recursively have to get patterns from parents or something). we will start at the top and end at this container.
@@ -63,8 +64,11 @@ export class PatternTreeContainer implements PatternMatcher {
 	}
 
 	canSubstitute(progress: MatchProgress) {
-		return !canBeSubPattern(progress.patternType) || (progress.currentNode !== progress.startNode);
+		//when the pattern can be a subpattern and it substitutes to a pattern which can be a subpattern at the same node, infinite recursion can occur
+		return !canBeSubPattern(progress.patternType)
+			|| (progress.currentNode !== progress.startNode);
 	}
+
 
 	/**
 	 * this function works as follows:
@@ -99,70 +103,100 @@ export class PatternTreeContainer implements PatternMatcher {
 		//RULES
 		//when a pattern is found, the function that found the end of the pattern adds the patternmatch
 		//when calling recursively, never move the index back
+
 		const pattern = testPattern.pattern;
-		for (; index <= pattern.length; index++) {
-			function isSeparator(checkIndex: number = index): boolean {
-				return / |'/.test(pattern[checkIndex]);
+
+		function isSeparator(checkIndex: number = index): boolean {
+			return / |'/.test(pattern[checkIndex]);
+		}
+
+		//check if this end node 'works'
+		const checkEndNode = (endNodeData: PatternData, checkIndex = index): MatchResult | undefined => {
+			//we have a potential match!
+			if (checkIndex == pattern.length && !progress.parent) {
+				progress.foundPattern = endNodeData;
+				//this is the end of the pattern. now the full pattern has matched!
+				const result = new MatchResult(testPattern, new PatternMatch(endNodeData, progress.start, checkIndex));
+				return result;
 			}
+			else if (checkIndex == pattern.length || isSeparator(checkIndex) && canBeSubPattern(progress.patternType)) {
+				//this part, a substitute, was parsed correctly. but now, we should continue the parent node.
+				//we will iterate over all parent type nodes which accept an instance of the return value.
+				//basically, we replaced the subpattern for a '%'
+				//even when checkIndex == pattern.length, we should check base classes, because we didn't determine yet which type node it is
+				let fullMatch: MatchResult | undefined;
+
+				const testNode = (parentProgress: MatchProgress): boolean => {
+					const testTypeChild = (testChild: PatternTreeNode): boolean => {
+						//clone
+						const testProgress: MatchProgress = { ...parentProgress, currentNode: testChild, startNode: testChild };
+						fullMatch = this.getMatchingPatternPart(testPattern, testProgress, checkIndex, argumentIndex, recursion + 1);
+						return fullMatch != undefined;
+					}
+					this.testTypeNodes(testTypeChild, parentProgress.currentNode, endNodeData.returnType);
+
+					if (fullMatch) {
+						//add the submatch to its parent match
+						const childMatch = new PatternMatch(endNodeData, progress.start, checkIndex);
+						const parentMatch = fullMatch.fullMatch.getDeepestChildNodeAt(progress.start);
+						//we know for sure that each match we will add, is further to the start. so we can add matches to the start of the deepest child node.
+						parentMatch.children.unshift(childMatch);
+						return true;
+					}
+					return false;
+				}
+
+				if (progress.parent) {
+					//maybe this is a submatch of a higher level match.
+					if (testNode(progress.parent)) return fullMatch;
+				}
+				if (this.canSubstitute(progress)) {
+					//maybe this is the first submatch of a higher level match.
+					for (const container of this.containersToTraverse) {
+						const root = container.trees[PatternType.expression].compileAndGetRoot();
+						//create a new parent node, which replaces the current node. the current node becomes a child.
+						if (testNode({
+							start: progress.start,
+							parent: progress.parent,
+							startNode: root,
+							currentNode: root,
+							patternType: PatternType.expression
+						})) return fullMatch;
+					}
+				}
+				//when no full match is found, we just continue
+			}
+			return undefined;
+		}
+
+		//check if this pattern matches a regex pattern
+		if (progress.currentNode == progress.startNode && progress.patternType == PatternType.expression && /[0-9-]/.test(pattern[index])) {
+			for (let child of progress.currentNode.regExpOrderedChildren) {
+				let childRegexp = (child as RegExpNode).regExp;
+				//this is a number
+				//const numberNode = progress.currentNode.regExpOrderedChildren[0] as RegExpNode;
+				let matchArray = childRegexp.exec(pattern.substring(index));
+				//reset
+				childRegexp.lastIndex = 0;
+				if (matchArray) {
+					const testProgress: MatchProgress = { ...progress, currentNode: child };
+					const result = this.getMatchingPatternPart(testPattern, testProgress, index + matchArray[0].length, argumentIndex, recursion + 1);
+					if (result) return result;
+				}
+			}
+
+
+		}
+
+		//loop over the pattern
+		for (; index <= pattern.length; index++) {
 			//multiple recursive matches may end at the same time
 			//for example:
 			//set {_var} to 3 + 4
 			//% + % and set % to % both end at the same time
 			for (const endNodeData of progress.currentNode.patternsEndedHere) {
-				//we have a potential match!
-				if (index == pattern.length && !progress.parent) {
-					progress.foundPattern = endNodeData;
-					//this is the end of the pattern. now the full pattern has matched!
-					const result = new MatchResult(testPattern, new PatternMatch(endNodeData, progress.start, index));
-					return result;
-				}
-				else if (index == pattern.length || isSeparator() && canBeSubPattern(progress.patternType)) {
-					//this part, a substitute, was parsed correctly. but now, we should continue the parent node.
-					//we will iterate over all parent type nodes which accept an instance of the return value.
-					//basically, we replaced the subpattern for a '%'
-					//even when index == pattern.length, we should check base classes, because we didn't determine yet which type node it is
-					let fullMatch: MatchResult | undefined;
-
-					const testNode = (parentProgress: MatchProgress): boolean => {
-						const testTypeChild = (testChild: PatternTreeNode): boolean => {
-							//clone
-							const testProgress: MatchProgress = { ...parentProgress, currentNode: testChild, startNode: testChild };
-							fullMatch = this.getMatchingPatternPart(testPattern, testProgress, index, argumentIndex, recursion + 1);
-							return fullMatch != undefined;
-						}
-						this.testTypeNodes(testTypeChild, parentProgress.currentNode, endNodeData.returnType);
-
-						if (fullMatch) {
-							//add the submatch to its parent match
-							const childMatch = new PatternMatch(endNodeData, progress.start, index);
-							const parentMatch = fullMatch.fullMatch.getDeepestChildNodeAt(progress.start);
-							//we know for sure that each match we will add, is further to the start. so we can add matches to the start of the deepest child node.
-							parentMatch.children.unshift(childMatch);
-							return true;
-						}
-						return false;
-					}
-
-					if (progress.parent) {
-						//maybe this is a submatch of a higher level match.
-						if (testNode(progress.parent)) return fullMatch;
-					}
-					if (this.canSubstitute(progress)) {
-						//maybe this is the first submatch of a higher level match.
-						for (const container of this.containersToTraverse) {
-							const root = container.trees[PatternType.expression].compileAndGetRoot();
-							//create a new parent node, which replaces the current node. the current node becomes a child.
-							if (testNode({
-								start: progress.start,
-								parent: progress.parent,
-								startNode: root,
-								currentNode: root,
-								patternType: PatternType.expression
-							})) return fullMatch;
-						}
-					}
-					//when no full match is found, we just continue
-				}
+				const result = checkEndNode(endNodeData);
+				if (result) return result;
 			}
 			if (index == pattern.length)
 				//no match stopped at this position
@@ -218,34 +252,6 @@ export class PatternTreeContainer implements PatternMatcher {
 					this.testTypeNodes(testClass, progress.currentNode, currentArgument);
 					if (testResult)
 						return testResult;
-				}
-				else if (/[0-9-]/.test(currentChar)) {
-
-					//this is a number
-					const numberPattern = this.containersToTraverse[0].trees[PatternType.expression].incompatiblePatterns[0];
-					let numberMatch = new RegExp(numberPattern.regexPatternString);
-					let matchArray: RegExpExecArray | null;
-					if (matchArray = numberMatch.exec(pattern.substring(index))) {
-						newIndex += matchArray[0].length;
-					}
-					const currentArgument: SkriptTypeState = numberPattern.returnType;
-					this.testTypeNodes(testClass, progress.currentNode, currentArgument);
-					if (testResult) {
-						//add the submatch to its parent match
-						const childMatch = new PatternMatch(numberPattern, index, newIndex);
-						const parentMatch = testResult.fullMatch.getDeepestChildNodeAt(progress.start);
-						//we know for sure that each match we will add, is further to the start. so we can add matches to the start of the deepest child node.
-						parentMatch.children.unshift(childMatch);
-						return testResult;
-					}
-
-
-					//const numberNode = progress.currentNode.typeOrderedChildren.get('num[ber][s]');
-					//if (numberNode && testClass(numberNode)) return testResult;
-					//const objectNode = progress.currentNode.typeOrderedChildren.get('object[s]');
-					//if (objectNode && testClass(objectNode)) return testResult;
-					//if (testResult)
-					//	return testResult;
 				}
 			}
 			//all possibilities have been tested, but there haven't been any children who fit this pattern. we need to submatch.

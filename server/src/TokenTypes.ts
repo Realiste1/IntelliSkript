@@ -24,6 +24,13 @@ export enum TokenTypes {
 	type,
 	typeParameter,
 	variable,
+	//custom types
+	//skript patterns when defined
+	pattern,
+	//a permission for a command
+	permission,
+	effect,
+	expression,
 	//the length of this enum
 	length
 }
