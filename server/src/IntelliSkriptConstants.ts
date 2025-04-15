@@ -1,5 +1,5 @@
 
-export const IsDebugMode = !__dirname.includes('johnheikens.intelliskript');
+export const IsDebugMode = false;// !__dirname.includes('johnheikens.intelliskript');
 /**
  * capture groups:
  * [0]: returns "-" or ""

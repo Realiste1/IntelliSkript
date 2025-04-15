@@ -12,20 +12,20 @@ export class SkriptFolder extends SkriptFolderContainer {
 	override parent: SkriptFolderContainer;
 
 	patternContainer: PatternTreeContainer;
-	getSkriptFileIndexByUri(uri: URI): number {
+	getPreferredSkriptFileIndexByUri(uri: URI): number {
 		return sortedIndex(this.files, uri, (a, b) => a.document.uri < b.toString());
 	}
 
 	addFile(file: SkriptFile) {
-		const index = this.getSkriptFileIndexByUri(file.uri);
+		const index = this.getPreferredSkriptFileIndexByUri(file.uri);
 		this.files.splice(index, 0, file);
 	}
 
 	getSkriptFileByUri(uri: URI): SkriptFile | undefined {
 		if (!this.files.length) return undefined;
-		const index = this.getSkriptFileIndexByUri(uri);
+		const index = this.getPreferredSkriptFileIndexByUri(uri);
 		const foundFile = this.files[index]
-		return foundFile.document.uri == uri.toString() ? foundFile : undefined;
+		return (foundFile && foundFile.document.uri == uri.toString()) ? foundFile : undefined;
 	}
 	/**invalidate all files in this folder and child folders */
 	invalidate() {

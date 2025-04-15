@@ -384,7 +384,8 @@ export class SkriptSection extends SkriptSectionGroup {
 		else if ('"{'.includes(currentNode.delimiter)) {
 			const borderSize = currentNode.delimiter == '"' ? 1 : 0;
 			const tokenType = currentNode.delimiter == '"' ? TokenTypes.string : TokenTypes.variable;
-			let modifiers: TokenModifiers[] = [];
+			let formatCodes: TokenModifiers[] = [];
+			let colorCode: TokenModifiers = TokenModifiers.bukkit_f;
 
 			//just tokenize around the already processed child nodes
 			let currentPosition = currentNode.start - borderSize;
@@ -401,21 +402,36 @@ export class SkriptSection extends SkriptSectionGroup {
 					for (let index = start; index < end; index++) {
 						if (context.currentString[index] == '&' && index + 1 < end) {
 							let nextChar = context.currentString[index + 1];
-							if (/[0-9a-fl-r]/.test(nextChar)) {
+							if (/[0-9a-fl-or]/.test(nextChar)) {
 								if (index > lastIndex) {
-									context.addToken(tokenType, lastIndex, index - lastIndex, ...modifiers);
+									context.addToken(tokenType, lastIndex, index - lastIndex, ...formatCodes, colorCode);
 									lastIndex = index;
 								}
 								if (nextChar == 'r') {
-									modifiers = [];
+									formatCodes = [];
+									colorCode = TokenModifiers.bukkit_f;
 								}
-								//we guarantee the compiler that it's one of the token modifiers
-								modifiers.push(TokenModifiers[("bukkit_" + nextChar) as keyof typeof TokenModifiers]);
+								else {
+									//we guarantee the compiler that it's one of the token modifiers
+									const newModifier = TokenModifiers[("bukkit_" + nextChar) as keyof typeof TokenModifiers];
+									if (/[0-9a-f]/.test(nextChar)) {
+										//reset format codes, like in minecraft java edition.
+										formatCodes = [];
+										//prevent multiple color code modifiers
+										colorCode = newModifier;
+									}
+									else {
+										if (!formatCodes.includes(newModifier)) {
+											//prevent duplicate format codes
+											formatCodes.push(newModifier);
+										}
+									}
+								}
 							}
 						}
 					}
 					//we can guarantee there will be something to tokenize here, at least 3 tokens (when the string ends with &c" )
-					context.addToken(tokenType, lastIndex, end - lastIndex, ...modifiers);
+					context.addToken(tokenType, lastIndex, end - lastIndex, ...formatCodes, colorCode);
 				}
 			}
 
