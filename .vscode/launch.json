@@ -3,18 +3,25 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Run Web Extension ",
 			"type": "extensionHost",
+			"debugWebWorkerHost": true,
 			"request": "launch",
-			"name": "Launch Client",
-			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceFolder}" ],
-			"autoAttachChildProcesses": true,
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceRoot}/client/out/**/*.js",
-				"${workspaceRoot}/server/out/**/*.js"
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionDevelopmentKind=web"
 			],
-			"preLaunchTask": "npm: watch"
+			"outFiles": [
+				"${workspaceFolder}/client/dist/**/*.js",
+				"${workspaceFolder}/server/dist/**/*.js"
+			],
+			"preLaunchTask": "npm: watch",
+			//"sourceMaps": true,
+			//"resolveSourceMapLocations": [
+			//	"${workspaceFolder}/**",
+			//	"!**/node_modules/**"
+			//],
+			//"trace": true
 		},
 		{
 			"type": "node",
@@ -24,13 +31,15 @@
 				"-r",
 				"ts-node/register"
 			],
-            "program": "${workspaceFolder}/addon-parser/src/index.ts",
-            "cwd": "${workspaceFolder}/addon-parser",
+			"program": "${workspaceFolder}/addon-parser/src/index.ts",
+			"cwd": "${workspaceFolder}/addon-parser",
 			//"args": [
 			//	"${workspaceFolder}/addon-parser/src/index.ts"
 			//],
 			"preLaunchTask": "buildaddonparser",
-			"outFiles": ["${workspaceFolder}/addon-parser/out/**/*.js"],
+			"outFiles": [
+				"${workspaceFolder}/addon-parser/out/**/*.js"
+			],
 			"sourceMaps": true
 		}
 	]

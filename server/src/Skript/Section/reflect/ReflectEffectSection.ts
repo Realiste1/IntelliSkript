@@ -1,4 +1,4 @@
-import { DiagnosticSeverity } from 'vscode-languageserver/node';
+import { DiagnosticSeverity } from 'vscode-languageserver/browser';
 import { TokenTypes } from '../../../TokenTypes';
 import type { SkriptContext } from '../../validation/SkriptContext';
 import {

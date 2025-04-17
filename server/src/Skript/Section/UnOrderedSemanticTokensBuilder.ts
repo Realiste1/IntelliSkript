@@ -1,5 +1,5 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Position, SemanticTokens, SemanticTokensBuilder, SemanticTokensDelta } from 'vscode-languageserver/node';
+import { Position, SemanticTokens, SemanticTokensBuilder, SemanticTokensDelta } from 'vscode-languageserver/browser';
 import * as IntelliSkriptConstants from '../../IntelliSkriptConstants';
 import { TokenModifiers } from '../../TokenModifiers';
 import { TokenTypes } from '../../TokenTypes';

@@ -1,0 +1,52 @@
+#AUTOMATICALLY GENERATED SKRIPT FILE
+#COPYRIGHT JOHN HEIKENS
+#https://github.com/JohnHeikens/IntelliSkript
+
+#Struct
+#A struct is a collection of typed fields.
+type:
+	patterns:
+		struct[s]
+
+#Struct Is From Template
+#Checks if a struct is from a specific template. The template name is case insensitive.
+#The template name can be a string or a literal.
+#since 1.0
+condition:
+	patterns:
+		[the] %structs% (is|are)[n't| not] [a] %string% struct[s]
+		[the] %structs% (were|was)[n't| not] made from [the] %string% template
+
+#Struct Creation
+#Creates an instance of a struct based off a template. The template name is case insensitive. Initial field values can be set by adding entries with the format 'fieldname: value'.
+#since 1.0
+expression:
+	patterns:
+		[a[n]] <([\w ]+)> struct [instance] [with [the] [initial] values [of]]
+	return type: struct
+#Struct Field Access
+#Access a field of a struct. The field name is case insensitive. Non-constant fields can be set, reset, or deleted.
+#since 1.0
+expression:
+	patterns:
+		[the] field <[\w ]+> [of] %struct%
+		%struct%'[s] <[\w ]+> field
+		%struct%[ ]->[ ]<[\w ]+>
+	delete:
+#		(internal code)
+	reset:
+#		(internal code)
+	return type: object
+#Template of Struct
+#Returns the name of the template used to create a struct.
+#since 1.0
+#Examples:
+#set {_struct} to a message struct
+#set {_template} to template of {_struct}
+# {_template} is now "message"
+#
+expression:
+	patterns:
+		[the] [struct] template of %structs%
+		%structs%'[s] [struct] template
+	return type: text

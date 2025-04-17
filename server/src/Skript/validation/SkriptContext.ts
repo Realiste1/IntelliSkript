@@ -1,5 +1,5 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic, DiagnosticSeverity, Location, Range } from 'vscode-languageserver/node';
+import { Diagnostic, DiagnosticSeverity, Location, Range } from 'vscode-languageserver/browser';
 import { SkriptNestHierarchy } from '../../nesting/SkriptNestHierarchy';
 import { TokenModifiers } from '../../TokenModifiers';
 import { TokenTypes } from '../../TokenTypes';

@@ -1,4 +1,4 @@
-import { DiagnosticSeverity, integer, Location } from 'vscode-languageserver/node';
+import { DiagnosticSeverity, integer, Location } from 'vscode-languageserver/browser';
 import { SkriptNestHierarchy } from '../../../nesting/SkriptNestHierarchy';
 //import { PatternData } from "../../pattern/PatternData";
 import { PatternData, TypeData } from '../../../pattern/data/PatternData';

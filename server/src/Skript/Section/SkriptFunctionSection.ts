@@ -1,4 +1,4 @@
-import { DiagnosticSeverity, Location } from 'vscode-languageserver/node';
+import { DiagnosticSeverity, Location } from 'vscode-languageserver/browser';
 import { TokenTypes } from '../../TokenTypes';
 import { SkriptVariable } from '../storage/SkriptVariable';
 import { SkriptTypeState } from '../storage/type/SkriptTypeState';

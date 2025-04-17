@@ -1,4 +1,4 @@
-import { Location } from 'vscode-languageserver/node';
+import { Location } from 'vscode-languageserver/browser';
 
 //TODO: use skripthierarchy here
 export class SkriptVariable {

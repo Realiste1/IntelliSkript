@@ -1,5 +1,5 @@
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { Location } from 'vscode-languageserver/node';
+import { Location } from 'vscode-languageserver/browser';
 import { SkriptNestHierarchy } from '../nesting/SkriptNestHierarchy';
 import type { ReflectPatternContainerSection } from '../skript/section/reflect/ReflectPatternContainerSection';
 import { SkriptTypeState } from "../skript/storage/type/SkriptTypeState";

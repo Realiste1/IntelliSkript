@@ -1,4 +1,4 @@
-import type { Location } from 'vscode-languageserver/node';
+import type { Location } from 'vscode-languageserver/browser';
 import type { ReflectPatternContainerSection } from '../../skript/section/reflect/ReflectPatternContainerSection';
 import { SkriptTypeState } from "../../skript/storage/type/SkriptTypeState";
 

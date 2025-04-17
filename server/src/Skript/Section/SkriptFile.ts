@@ -1,5 +1,5 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { DiagnosticSeverity, Range, TextEdit } from 'vscode-languageserver/node';
+import { DiagnosticSeverity, Range, TextEdit } from 'vscode-languageserver/browser';
 import { URI } from 'vscode-uri';
 import { PatternData } from '../../pattern/data/PatternData';
 import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';

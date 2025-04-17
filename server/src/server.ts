@@ -245,7 +245,6 @@ export class Server {
 				}
 			}
 
-
 			//add addon folder URI to addon folder
 			const startData = await connection.sendRequest(getStartDataRequest, {});
 			currentWorkSpace.addonFolder.uri = URI.parse(startData.addonPath);
