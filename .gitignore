@@ -3,3 +3,6 @@ node_modules
 .vscode-test-web
 client/out
 server/out
+*.vsix
+*.cpuprofile
+*.map

@@ -1,9 +1,11 @@
-.vscode/**
-**/*.ts
-**/*.map
-.gitignore
-**/tsconfig.json
-**/tsconfig.base.json
-contributing.md
-.travis.yml
-**/node_modules/**
+**
+!graphics/icon_128x128.png
+!graphics/skript icon.png
+!server/dist/browserServerMain.js
+!client/dist/browserClientMain.js
+!LICENSE
+!language-configuration.json
+!themes/*
+!server/assets/addons/*
+!README.md
+!package.json
