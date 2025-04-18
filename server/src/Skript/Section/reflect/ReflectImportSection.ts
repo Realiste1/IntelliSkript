@@ -6,7 +6,7 @@ import { SkriptSection } from '../skriptSection/SkriptSection';
 //TODO: add support for options
 export class ReflectImportSection extends SkriptSection {
 	processLine(context: SkriptContext): void {
-		const regex = /^((?:[a-z]{1,}\.)+)([a-zA-Z0-9_]+)(?:|\$([a-zA-Z0-9_]+))(?:| as (.*))$/; // /function ([a-zA-Z0-9]{1,})\(.*)\) :: (.*)/;
+		const regex = /^((?:[a-z]+\.)(?:[A-Za-z0-9_]+\.)+)([a-zA-Z0-9_]+)(?:|\$([a-zA-Z0-9_]+))(?:| as (.*))$/; // /function ([a-zA-Z0-9]{1,})\(.*)\) :: (.*)/;
 		const result = regex.exec(context.currentString);
 		if (result == null) {
 			context.addDiagnostic(0, context.currentString.length, "is this an import? (for example java.util.UUID fits here)");

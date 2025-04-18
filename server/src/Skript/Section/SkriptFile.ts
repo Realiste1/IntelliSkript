@@ -122,7 +122,7 @@ export class SkriptFile extends SkriptSection {
 		else if (sectionKeyword == "aliases") {
 			s = new SkriptAliasesSection(this, context);
 		}
-		else if(sectionKeyword == "variables"){
+		else if (sectionKeyword == "variables") {
 			s = new SkriptVariablesSection(this, context);
 		}
 		else {
@@ -159,7 +159,7 @@ export class SkriptFile extends SkriptSection {
 				}
 				else {
 					addKeywordToken = false;
-					const result = this.detectPatternsRecursively(context, PatternType.event);
+					const result = this.detectPatternsRecursively(context, [PatternType.event]);
 					//const pattern = this.getPatternData(new SkriptPatternCall(context.currentString, PatternType.event), stopAtFirstResultProcessor);
 					if (result.detectedPattern) {
 						//event
@@ -201,7 +201,7 @@ export class SkriptFile extends SkriptSection {
 				} else
 					currentDelimiters += line[i];
 			}
-			else if (char === '#' && currentDelimiters.length == 0){
+			else if (char === '#' && currentDelimiters.length == 0) {
 				commentIndex = i; break;
 			}
 		}

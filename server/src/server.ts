@@ -73,9 +73,11 @@ export class Server {
 		async function processWorkspaceFolder(folder: SkriptFolder) {
 			const folderUri = folder.uri.toString();
 			const documents = await connection.sendRequest(getDocumentsRequest, { folderUri: folderUri });
+			console.log('received files for ' + folderUri + ': ' + documents)
 
 			//the client will send us a list of files. we will create the folders for them ourselves.
 			for (const { uri, content } of documents) {
+				console.log('reading file from' + uri)
 
 				//currentWorkSpace.validateTextDocument()
 				//create folders until we're at the files level
@@ -91,9 +93,9 @@ export class Server {
 
 			//works for the client only
 			//const myExtDir = vscode.extensions.getExtension ("JohnHeikens.IntelliSkript").extensionPath;
-			if (IntelliSkriptConstants.IsDebugMode) {
-				await Sleep(5000);//give the debugger time to start
-			}
+			//if (IntelliSkriptConstants.IsDebugMode) {
+			//	await Sleep(5000);//give the debugger time to start
+			//}
 
 			//currentWorkSpaces.push(new SkriptWorkSpace());
 			if (params.workspaceFolders != null) {
@@ -248,9 +250,11 @@ export class Server {
 			//add addon folder URI to addon folder
 			const startData = await connection.sendRequest(getStartDataRequest, {});
 			currentWorkSpace.addonFolder.uri = URI.parse(startData.addonPath);
+			console.log('reading folders: ' + currentWorkSpace.children);
 
 			//loop over folders and read them
 			for (const f of currentWorkSpace.children) {
+				console.log('reading folder: ' + f.uri.toString());
 				await processWorkspaceFolder(f);
 			}
 
@@ -657,7 +661,7 @@ export class Server {
 		//				];
 		//			}
 		//		);
-//
+		//
 		//		// This handler resolves additional information for the item selected in
 		//		// the completion list.
 		//		connection.onCompletionResolve(

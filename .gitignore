@@ -1,8 +1,8 @@
 dist
 node_modules
 .vscode-test-web
-client/out
-server/out
+out
 *.vsix
 *.cpuprofile
 *.map
+resourceFiles.ts

@@ -207,7 +207,7 @@ export class SkriptSection extends SkriptSectionGroup {
 
 	//detect patterns like a [b | c]
 	//return value: a type. basically, it will convert each subpattern into a result type (a %)
-	detectPatternsRecursively(context: SkriptContext, mainPatternType: PatternType = PatternType.effect, isTopNode = true, currentNode: SkriptNestHierarchy = context.getHierarchy(true)): { detectedPattern: PatternData | undefined } {
+	detectPatternsRecursively(context: SkriptContext, mainPatternTypes: PatternType[] = [PatternType.effect, PatternType.condition], isTopNode = true, currentNode: SkriptNestHierarchy = context.getHierarchy(true)): { detectedPattern: PatternData | undefined } {
 		let foundPattern: PatternData | undefined;
 		const mergedPatternArguments: Map<number, SkriptTypeState> = new Map<number, SkriptTypeState>();
 		//const currentNode = isTopNode ? context.createHierarchy(isTopNode) : context.hierarchy;
@@ -261,7 +261,7 @@ export class SkriptSection extends SkriptSectionGroup {
 			//make the hierarchy relative to the node
 			const offsetNode = nodeToClone.cloneWithOffset(-nodeToClone.start);
 
-			const childResults = this.detectPatternsRecursively(context.push(nodeToClone.start, nodeToClone.end - nodeToClone.start), PatternType.expression, false, offsetNode);
+			const childResults = this.detectPatternsRecursively(context.push(nodeToClone.start, nodeToClone.end - nodeToClone.start), [PatternType.expression], false, offsetNode);
 			if (childResults.detectedPattern)
 				childResultList[i] = childResults.detectedPattern;
 
@@ -362,20 +362,24 @@ export class SkriptSection extends SkriptSectionGroup {
 				(currentPatternArguments.length == 1 && pattern.pattern.length == 1) &&
 				//this pattern is just '%'
 				(!isTopNode //we should pass it to the pattern detector above
-					|| mainPatternType == PatternType.effect || mainPatternType == PatternType.expression)//we don't have to evaluate anything
+					|| mainPatternTypes.includes(PatternType.effect) || mainPatternTypes.includes(PatternType.expression))//we don't have to evaluate anything
 			) {
 
 			}
 			else {
+				let matchResult = undefined;
+				for (const mainPatternType of mainPatternTypes) {
 
-				//pass pattern by reference
-				const matchResult = this.getPatternData(new SkriptPatternCall(pattern.pattern, mainPatternType, currentPatternArguments));// context, mainPatternType, pattern, currentPatternArguments);
+					//pass pattern by reference
+					matchResult = this.getPatternData(new SkriptPatternCall(pattern.pattern, mainPatternType, currentPatternArguments));// context, mainPatternType, pattern, currentPatternArguments);
 
-				if (matchResult) {
-					foundPattern = matchResult.fullMatch.matchedPattern;
-					this.visualizeMatch(context, pattern, matchResult.fullMatch);
+					if (matchResult) {
+						foundPattern = matchResult.fullMatch.matchedPattern;
+						this.visualizeMatch(context, pattern, matchResult.fullMatch);
+						break;
+					}
 				}
-				else if (isTopNode) {
+				if (!matchResult && isTopNode) {
 					context.addDiagnostic(currentNode.start, currentNode.end - currentNode.start, "can't understand this line (pattern detection is a work in progress. please report on discord)", DiagnosticSeverity.Hint, "IntelliSkript->Pattern");
 				}
 			}
@@ -494,7 +498,7 @@ export class SkriptSection extends SkriptSectionGroup {
 		for (const pattern of ifStatementStartPatterns) {
 			if (context.currentString.startsWith(pattern)) {
 				context.addToken(TokenTypes.keyword, 0, pattern.length);
-				section.detectPatternsRecursively(context.push(pattern.length), PatternType.condition);
+				section.detectPatternsRecursively(context.push(pattern.length), [PatternType.condition]);
 				return section;
 			}
 		}
@@ -502,7 +506,7 @@ export class SkriptSection extends SkriptSectionGroup {
 			context.addToken(TokenTypes.keyword, 0, 'else'.length);
 		}
 		else {
-			const result = section.detectPatternsRecursively(context, PatternType.condition);
+			const result = section.detectPatternsRecursively(context, [PatternType.condition]);
 			if (!result.detectedPattern) return undefined;
 		}
 		//try to find a (condition) pattern

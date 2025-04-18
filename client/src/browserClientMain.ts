@@ -3,11 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ExtensionContext, ExtensionMode, extensions, RelativePattern, Uri, window, workspace } from 'vscode';
+import { ExtensionContext, ExtensionMode, extensions, RelativePattern, TextDocumentContentProvider, Uri, window, workspace } from 'vscode';
 import { LanguageClientOptions } from 'vscode-languageclient';
 
 import { LanguageClient } from 'vscode-languageclient/browser';
-
+import { resourceFiles } from './assets/resourceFiles';
+const intelliskriptScheme = 'intelliskript';
+const resourceFolderString = '/resources';
 let client: LanguageClient | undefined;
 // this method is called when vs code is activated
 export async function activate(context: ExtensionContext) {
@@ -26,6 +28,14 @@ export async function activate(context: ExtensionContext) {
 		synchronize: {},
 		initializationOptions: {}
 	};
+
+	const myProvider = new (class implements TextDocumentContentProvider {
+		provideTextDocumentContent(uri: Uri): string {
+			//remove the '\'
+			return resourceFiles.get(uri.path.substring((resourceFolderString + '/').length)) ?? "#document could not be opened";
+		}
+	})();
+	workspace.registerTextDocumentContentProvider(intelliskriptScheme, myProvider);
 
 	client = createWorkerLanguageClient(context, clientOptions);
 
@@ -71,6 +81,14 @@ export async function activateClient(context: ExtensionContext, client: Language
 	//this listener just sends the skript contents of an entire folder to the server
 	const getDocumentsListener = client.onRequest('custom/getDocuments', async (params: { folderUri: string }) => {
 		const folderUri = Uri.parse(params.folderUri);
+		if (folderUri.scheme == intelliskriptScheme) {
+			//just return all files
+			let fileList: { uri: string, content: string }[] = [];
+			for (const file of resourceFiles) {
+				fileList.push({ uri: Uri.from({ scheme: intelliskriptScheme, path: resourceFolderString + '/' + file[0] }).toString(), content: file[1] });
+			}
+			return fileList;
+		}
 		const files = await workspace.findFiles(new RelativePattern(folderUri, '**/*.sk'));
 
 		const decoder = new TextDecoder('utf-8');
@@ -88,7 +106,7 @@ export async function activateClient(context: ExtensionContext, client: Language
 	if (extensionUri)
 		client.onRequest('custom/getStartData', async (_params: {}) => {
 			return {
-				addonPath: Uri.joinPath(extensionUri, 'server', 'assets', 'addons').toString()
+				addonPath: Uri.from({ scheme: intelliskriptScheme, path: resourceFolderString }).toString()
 			};
 		})
 	// Listen for active text editor changes

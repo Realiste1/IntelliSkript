@@ -6,6 +6,5 @@
 !LICENSE
 !language-configuration.json
 !themes/*
-!server/assets/addons/*
 !README.md
 !package.json

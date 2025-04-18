@@ -63,8 +63,10 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 						folderFile.invalidate();
 					}
 				}
-				//invalidate the folder and all subfolders
-				file.parent.invalidate();
+				//invalidate all subfolders
+				for(const childFolder of file.parent.children){
+					childFolder.invalidate();
+				}
 
 				if (file.parent == this.addonFolder) {
 					//this is the addon folder, all files in the workspace depend on this

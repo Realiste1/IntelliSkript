@@ -3,11 +3,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Parser, RepoDirectory } from './Parser';
+import { ParseFile } from './ParseFile';
 
 
-export const ServerDirectory = path.join(RepoDirectory, 'server');
-export const ServerAssetsDirectory = path.join(ServerDirectory, "assets");
-export const AddonSkFilesDirectory = path.join(ServerAssetsDirectory, "addons");
+export const ServerAssetsDirectory = path.join(RepoDirectory, 'server', 'src', 'assets');
 export const skriptFileHeader = "#AUTOMATICALLY GENERATED SKRIPT FILE\n#COPYRIGHT JOHN HEIKENS\n#https://github.com/JohnHeikens/IntelliSkript\n"
 
 export class GeneralJson {
@@ -250,18 +249,16 @@ export class AddonParser extends Parser {
 		})
 		return str;
 	}
-	static override ParseFile(file: string, contents: string): void {
-		const fileData = JSON.parse(contents);
+	static override ParseFile(file: ParseFile): ParseFile {
+		const fileData = JSON.parse(file.content);
 		const parseResult = AddonParser.parseFileJson(fileData);
-		const inputFileName = file.substring(0, file.indexOf('.'));
-		const outputFileName = inputFileName;
-		const targetPath = path.join(AddonSkFilesDirectory, outputFileName) + ".sk";
-		fs.writeFileSync(targetPath, parseResult);
+		const inputFileName = file.fileName.substring(0, file.fileName.indexOf('.'));
+		return { content: parseResult, fileName: inputFileName + '.sk' };
 	}
-	static override ParseFiles(): void {
+	static override ParseFiles(): string {
 
-		if (!fs.existsSync(AddonSkFilesDirectory)) {
-			fs.mkdirSync(AddonSkFilesDirectory, { recursive: true });
+		if (!fs.existsSync(ServerAssetsDirectory)) {
+			fs.mkdirSync(ServerAssetsDirectory, { recursive: true });
 		}
 		const text = fs.readFileSync(path.join(this.parserDirectory, "inheritance.txt"), "utf8").toLocaleLowerCase();
 		for (const line of text.split('\n')) {
@@ -269,7 +266,7 @@ export class AddonParser extends Parser {
 			if (parts.length > 1)
 				this.inheritanceByID.set(this.normalizeName(parts[0]), parts[1]);
 		}
-		super.ParseFiles();
+		return super.ParseFiles();
 	}
 }
 //import { readFile } from "fs/promises";

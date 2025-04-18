@@ -7,6 +7,7 @@ import { SkriptFolderContainer } from './SkriptFolderContainer';
 import { SkriptWorkSpace } from './SkriptWorkSpace';
 
 export class SkriptFolder extends SkriptFolderContainer {
+	//uri.path always ends with a slash
 	uri: URI;
 	files: SkriptFile[] = [];
 	override parent: SkriptFolderContainer;
@@ -71,7 +72,8 @@ export class SkriptFolder extends SkriptFolderContainer {
 	override getPatternTree = () => this.patternContainer;
 
 	createFoldersForUri(uri: URI): SkriptFolder {
-		const child = this.getFolderByUri(uri);
+		console.log('creating folder for uri: ' + uri.toString() + ' , folder uri:' + this.uri.toString())
+		const child = this.getSubFolderByUri(uri);
 		if (child) {
 			return child.createFoldersForUri(uri);
 		}
