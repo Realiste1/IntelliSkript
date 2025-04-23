@@ -41,7 +41,7 @@ export class SkriptFolder extends SkriptFolderContainer {
 	 *
 	 * @param endFile validate until this file is encountered
 	 */
-	validate(endFile?: SkriptFile) {
+	async validate(endFile?: SkriptFile) {
 		//if the last file isn't validated, then we need to recalculate the patterns.
 		//when a file invalidates, all files after it invalidate too.
 		if (this.files.length == 0 || !this.files[this.files.length - 1].validated) {
@@ -53,7 +53,7 @@ export class SkriptFolder extends SkriptFolderContainer {
 			for (const file of this.files) {
 				//this way, a file won't know what is previous to it
 				if (!file.validated)
-					file.validate();
+					await file.validate();
 				this.patternContainer.merge(file.patternContainer);
 
 				if (file === endFile) //we don't need patterns after this

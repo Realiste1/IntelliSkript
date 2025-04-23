@@ -4,7 +4,7 @@
 	"description": "IntelliSense for skript",
 	"author": "John Heikens",
 	"license": "GNU",
-	"version": "1.7.21",
+	"version": "1.7.22",
 	"icon": "./graphics/icon_128x128.png",
 	"repository": {
 		"type": "git",
@@ -33,7 +33,6 @@
 	"engines": {
 		"vscode": "^1.85.0"
 	},
-	"files": ["./server/assets"],
 	"activationEvents": [
 		"onLanguage:Sk-VSC",
 		"onLanguage:sk",

@@ -36,7 +36,39 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 		}
 	}
 
-	validateTextDocument(document: TextDocument, couldBeChanged: boolean = true): void {
+	invalidateDependents(file: SkriptFile) {
+		// the document has changed
+		// all files coming 'after' this file need to be updated.
+		// not only the previous dependents, because it could be that other files will get a dependency now
+		let found = false;
+		if (file.parent instanceof SkriptFolder) {
+			for (const folderFile of file.parent.files) {
+				if (folderFile == file) {
+					found = true;
+				}
+				if (found) {
+					folderFile.invalidate();
+				}
+			}
+			//invalidate all subfolders
+			for (const childFolder of file.parent.children) {
+				childFolder.invalidate();
+			}
+
+			if (file.parent == this.addonFolder) {
+				//this is the addon folder, all files in the workspace depend on this
+				for (const folder of this.children)
+					folder.invalidate();
+				for (const looseFile of this.looseFiles)
+					looseFile.invalidate();
+
+			}
+		}
+		else
+			file.invalidate();
+	}
+
+	async validateTextDocument(document: TextDocument, couldBeChanged: boolean = true) {
 		const uri: URI = URI.parse(document.uri);
 		let file = this.getSkriptFileByUri(uri);
 		if (!file) {
@@ -50,39 +82,10 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 			}
 		}
 		else if (couldBeChanged && file.updateContent(document)) {
-			// the document has changed
-			// all files coming 'after' this file need to be updated.
-			// not only the previous dependents, because it could be that other files will get a dependency now
-			let found = false;
-			if (file.parent instanceof SkriptFolder) {
-				for (const folderFile of file.parent.files) {
-					if (folderFile == file) {
-						found = true;
-					}
-					if (found) {
-						folderFile.invalidate();
-					}
-				}
-				//invalidate all subfolders
-				for(const childFolder of file.parent.children){
-					childFolder.invalidate();
-				}
-
-				if (file.parent == this.addonFolder) {
-					//this is the addon folder, all files in the workspace depend on this
-					for (const folder of this.children)
-						folder.invalidate();
-					for (const looseFile of this.looseFiles)
-						looseFile.invalidate();
-
-				}
-			}
-			else
-				file.invalidate();
+			this.invalidateDependents(file);
 		}
 
 
-		//use the token builder from the file
 		if (!file.validated) {
 			//revalidate all possibly invalidated dependencies
 
@@ -91,7 +94,7 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 
 			if (mainSubFolder != this.addonFolder) {
 				//first of all, validate the entire addon folder
-				this.addonFolder.validate();
+				await this.addonFolder.validate();
 			}
 
 			//when not, this file is a loose file
@@ -100,15 +103,15 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 				let currentFolder = mainSubFolder;
 				//recursively validate parent folders until we are at the file
 				while (currentFolder && file.parent != currentFolder) {
-					currentFolder.validate();
+					await currentFolder.validate();
 					currentFolder = currentFolder.getSubFolderByUri(uri);
 				}
 				//finally, validate the folder itself
 				//regenerate patterns, but without those of the old file to avoid double definitions
-				currentFolder?.validate(file);
+				await currentFolder?.validate(file);
 			}
 			else {
-				file.validate();
+				await file.validate();
 			}
 		}
 	}

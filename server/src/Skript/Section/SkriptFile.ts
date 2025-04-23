@@ -29,7 +29,7 @@ import { SemanticTokenLine, UnOrderedSemanticTokensBuilder } from './UnOrderedSe
 import { ReflectSectionSection } from './reflect/ReflectSectionSection';
 import { SkriptAliasesSection } from './SkriptAliasesSection';
 import { SkriptVariablesSection } from './SkriptVariablesSection';
-
+import { currentServer } from '../../browserServerMain'
 
 
 export class SkriptFile extends SkriptSection {
@@ -213,7 +213,7 @@ export class SkriptFile extends SkriptSection {
 		const lineWithoutComments = commentIndex == -1 ? line : line.substring(0, commentIndex);
 		return { trimmedLine: lineWithoutComments.trim(), commentIndex: commentIndex };
 	}
-	validate() {
+	async validate() {
 		//clear old data
 		this.patternContainer = new PatternTreeContainer(this.parent.getPatternTree());
 		this.matches = new SkriptPatternMatchHierarchy();
@@ -246,6 +246,8 @@ export class SkriptFile extends SkriptSection {
 		let lastCodeLine = 0;
 
 		const indentData = new IndentData();
+
+		const currentSettings = await currentServer.getDocumentSettings(this.uri.toString());
 
 		function popStacks(stacksToPop: number) {
 			if (stacksToPop > 0) {

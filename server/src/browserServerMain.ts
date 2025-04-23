@@ -18,6 +18,7 @@ const messageReader = new BrowserMessageReader(self);
 const messageWriter = new BrowserMessageWriter(self);
 
 const connection = createConnection(messageReader, messageWriter);
+
 //works for the client only
 //const myExtDir = vscode.extensions.getExtension ("JohnHeikens.IntelliSkript").extensionPath;
 //if (IntelliSkriptConstants.IsDebugMode) {
@@ -27,4 +28,4 @@ console.log("initializing");
 /* from here on, all code is non-browser specific and could be shared with a regular extension */
 
 //run server.ts
-new Server(connection);
+export let currentServer = new Server(connection);

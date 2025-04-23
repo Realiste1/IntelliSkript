@@ -11,15 +11,23 @@ import { IndentData } from './skript/validation/IndentData';
 import { Sleep } from './Thread';
 import { TokenModifiers } from './TokenModifiers';
 import { TokenTypes } from './TokenTypes';
+import { Deferred } from './Thread'
+import { WordInfo } from './skript/validation/wordInfo'
 
 export class Server {
+	initialized = new Deferred<void>();
+	globalSettings: Thenable<IntelliSkriptSettings> = this.getGlobalSettings();
+	connection: Connection;
+	// Cache the settings of all open documents
+	documentSettings: Map<string, Thenable<IntelliSkriptSettings>> = new Map();
+	//workspaces
+	currentWorkSpace = new SkriptWorkSpace();
 	constructor(connection: Connection) {
+		this.connection = connection;
 		// Create a simple text document manager.
 		const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-		//workspaces
 
-		let currentWorkSpace = new SkriptWorkSpace();
 
 		//this function will unlock the workspace when it finished loading
 		let unlockWorkSpace: () => void;
@@ -89,19 +97,19 @@ export class Server {
 
 		connection.onInitialize(async (params: InitializeParams) => {
 			//lock the workspace, so other functions can't do anything with it
-			unlockWorkSpace = await currentWorkSpace.mutex.lock();
+			unlockWorkSpace = await this.currentWorkSpace.mutex.lock();
 
 			//works for the client only
 			//const myExtDir = vscode.extensions.getExtension ("JohnHeikens.IntelliSkript").extensionPath;
-			//if (IntelliSkriptConstants.IsDebugMode) {
-			//	await Sleep(5000);//give the debugger time to start
-			//}
+			if (IntelliSkriptConstants.IsDebugMode) {
+				await Sleep(5000);//give the debugger time to start
+			}
 
 			//currentWorkSpaces.push(new SkriptWorkSpace());
 			if (params.workspaceFolders != null) {
 				console.log(params.workspaceFolders);
 				for (const folder of params.workspaceFolders) {
-					currentWorkSpace.children.push(new SkriptFolder(currentWorkSpace, URI.parse(folder.uri)));
+					this.currentWorkSpace.children.push(new SkriptFolder(this.currentWorkSpace, URI.parse(folder.uri)));
 					//const f = new SkriptFolder(currentWorkSpace, folder.uri);
 					//currentWorkSpace.children.push(f);
 					//currentWorkSpace.addFolder(f);
@@ -210,6 +218,7 @@ export class Server {
 
 		connection.onInitialized(async () => {
 			//the client is ready now.
+			this.initialized.resolve();
 
 			if (hasConfigurationCapability) {
 				// Register for all configuration changes.
@@ -230,30 +239,26 @@ export class Server {
 				//{ language: 'skriptlang' }
 			];
 
-			const settings = await getGlobalSettings() ?? defaultSettings;
 
-			if (settings.UseColorTheme) {
-
-				if (semanticTokensLegend) {
-					const registrationOptions: SemanticTokensRegistrationOptions = {
-						documentSelector: sel,
-						legend: semanticTokensLegend,
-						range: false,
-						full: {
-							delta: true
-						}
-					};
-					void connection.client.register(SemanticTokensRegistrationType.type, registrationOptions);
-				}
+			if (semanticTokensLegend) {
+				const registrationOptions: SemanticTokensRegistrationOptions = {
+					documentSelector: sel,
+					legend: semanticTokensLegend,
+					range: false,
+					full: {
+						delta: true
+					}
+				};
+				void connection.client.register(SemanticTokensRegistrationType.type, registrationOptions);
 			}
 
 			//add addon folder URI to addon folder
 			const startData = await connection.sendRequest(getStartDataRequest, {});
-			currentWorkSpace.addonFolder.uri = URI.parse(startData.addonPath);
-			console.log('reading folders: ' + currentWorkSpace.children);
+			this.currentWorkSpace.addonFolder.uri = URI.parse(startData.addonPath);
+			console.log('reading folders: ' + this.currentWorkSpace.children);
 
 			//loop over folders and read them
-			for (const f of currentWorkSpace.children) {
+			for (const f of this.currentWorkSpace.children) {
 				console.log('reading folder: ' + f.uri.toString());
 				await processWorkspaceFolder(f);
 			}
@@ -261,36 +266,20 @@ export class Server {
 			unlockWorkSpace();
 		});
 
-		// IntelliSkript settings
-		interface IntelliSkriptSettings {
-			requireTabIndents: boolean;
-			UseColorTheme: boolean;
-		}
-
-		// The global settings, used when the `workspace/configuration` request is not supported by the client.
-		// Please note that this is not the case when using this server with the client provided in this example
-		// but could happen with other clients.
-		const defaultSettings: IntelliSkriptSettings = {
-			requireTabIndents: false,
-			UseColorTheme: true
-		};
-
-		// Cache the settings of all open documents
-		const documentSettings: Map<string, Thenable<IntelliSkriptSettings>> = new Map();
-
-		connection.onDocumentFormatting((params: DocumentFormattingParams) => {
+		connection.onDocumentFormatting(async (params: DocumentFormattingParams) => {
 			const { textDocument } = params;
-			const file = currentWorkSpace.getSkriptFileByUri(URI.parse(textDocument.uri));
+			const file = this.currentWorkSpace.getSkriptFileByUri(URI.parse(textDocument.uri));
 			if (file)
 				return file.format();
 
 			return [];
 		});
 
-		connection.onDidChangeConfiguration(() => {
+		connection.onDidChangeConfiguration(async () => {
 			if (hasConfigurationCapability) {
 				// Reset all cached document settings
-				documentSettings.clear();
+				this.documentSettings.clear();
+				this.globalSettings = this.getGlobalSettings();
 			} else {
 			}
 
@@ -313,39 +302,18 @@ export class Server {
 			//}
 		});
 
-		//function getDocumentSettings(resource: string): Thenable<IntelliSkriptSettings> {
-		//	if (!hasConfigurationCapability) {
-		//		return Promise.resolve(globalSettings);
-		//	}
-		//	let result = documentSettings.get(resource);
-		//	if (!result) {
-		//		result = connection.workspace.getConfiguration({
-		//			scopeUri: resource,
-		//			section: 'intelliSkript'
-		//		});
-		//		documentSettings.set(resource, result);
-		//	}
-		//	return result;
-		//}
-
-		function getGlobalSettings(): Thenable<IntelliSkriptSettings> {
-			const settings = connection.workspace.getConfiguration("IntelliSkript");
-			return settings;
-		}
-
-
 		// Only keep settings for open documents
-		documents.onDidClose(e => {
-			documentSettings.delete(e.document.uri);
+		documents.onDidClose(async (e) => {
+			this.documentSettings.delete(e.document.uri);
 			//todo: handle closing of files properly
-			const looseFileIndex = currentWorkSpace.looseFiles.findIndex(file => file.document.uri == e.document.uri);
+			const looseFileIndex = this.currentWorkSpace.looseFiles.findIndex(file => file.document.uri == e.document.uri);
 			if (looseFileIndex != -1) {
-				currentWorkSpace.looseFiles[looseFileIndex].invalidate();
-				currentWorkSpace.looseFiles.splice(looseFileIndex, 1);
+				this.currentWorkSpace.looseFiles[looseFileIndex].invalidate();
+				this.currentWorkSpace.looseFiles.splice(looseFileIndex, 1);
 			}
 		});
 		// Handle custom notification for active text editor change
-		connection.onNotification('custom/onDidChangeActiveTextEditor', (params) => {
+		connection.onNotification('custom/onDidChangeActiveTextEditor', async (params) => {
 			//validate this file when switching to it
 			//this boosts performance; this way, when you are editing a file, for each word you write, we can update the file.
 			//their dependencies will only be updated when you switch to them.
@@ -357,15 +325,15 @@ export class Server {
 
 		// The content of a text document has changed. This event is emitted
 		// when the text document first opened or when its content has changed.
-		documents.onDidChangeContent(change => {
+		documents.onDidChangeContent(async (change) => {
 			validateTextDocument(change.document);
 		});
 
-		async function validateTextDocument(textDocument: TextDocument, couldBeChanged: boolean = true): Promise<void> {
-			const unlock = await currentWorkSpace.mutex.lock();
-			currentWorkSpace.validateTextDocument(textDocument, couldBeChanged);
+		const validateTextDocument = async (textDocument: TextDocument, couldBeChanged: boolean = true): Promise<void> => {
+			const unlock = await this.currentWorkSpace.mutex.lock();
+			await this.currentWorkSpace.validateTextDocument(textDocument, couldBeChanged);
 
-			const validatedDocument = currentWorkSpace.getSkriptFileByUri(URI.parse(textDocument.uri));
+			const validatedDocument = this.currentWorkSpace.getSkriptFileByUri(URI.parse(textDocument.uri));
 			unlock();
 			if (validatedDocument) {
 				const diagnostics: Diagnostic[] = validatedDocument.parseResult.diagnostics;
@@ -375,71 +343,12 @@ export class Server {
 			}
 		}
 
-		interface wordInfo {
-			wordRange?: Range;
-			//result: wordLookupResult;
-			variable?: SkriptVariable;
-			pattern?: PatternData;
-		}
-
-		function getWordInfo(params: TextDocumentPositionParams): wordInfo {
-
-			//check the line
-			const f = currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
-			if (f) {
-				const lines = f.document.getText().split('\n');
-				const clickedLineText = lines[params.position.line];
-				const indentationEndIndex = IndentData.getIndentationEndIndex(clickedLineText);
-				if (params.position.character < indentationEndIndex) {
-					return {
-						variable: undefined
-					};//clicked on indentation
-				}
-
-				const variableRegex = /\{(.*?)\}/g;
-				let match;
-				const exactSection = f.getExactSectionAtLine(params.position.line);
-				while ((match = variableRegex.exec(clickedLineText))) {
-					if (params.position.character >= match.index && params.position.character < match.index + match[0].length) {
-						//clicked on a variable
-						const variable = exactSection.getVariableByName(match[1]);
 
 
-						if (variable != undefined) {
-							return {
-								variable: variable,
-								wordRange: {
-									start: { line: params.position.line, character: match.index },
-									end: { line: params.position.line, character: match.index + match[0].length }
-								}
-							};
-						}
-					}
-				}
 
-				//check for patterns
-				const patternReference = f.matches.getDeepestChildNodeAt(f.document.offsetAt(params.position));
-				if (patternReference) {
-					if (patternReference.matchedPattern) {
-						const pattern = patternReference.matchedPattern;
-						return {
-							pattern: pattern,
-							wordRange: {
-								start: f.document.positionAt(patternReference.start),
-								end: f.document.positionAt(patternReference.end)
-							}
-						};
-					}
-				}
-			}
-			//const currentDocumentText = params.textDocument.getText();
-			return {
-				variable: undefined
-			};
-		}
 
-		connection.onHover((params: TextDocumentPositionParams): Hover | undefined => {
-			const info = getWordInfo(params);
+		connection.onHover(async (params: TextDocumentPositionParams): Promise<Hover | undefined> => {
+			const info = this.getWordInfo(params);
 			let hoverContent: MarkupContent | undefined;
 			if (info.variable) {
 				const parameterStr = info.variable.isParameter ? '(parameter) ' : '';
@@ -471,10 +380,10 @@ export class Server {
 		//examples:
 		//https://github.com/microsoft/vscode-languageserver-node/blob/main/testbed/server/src/server.ts
 
-		connection.onDefinition((params): DefinitionLink[] => {
-			const f = currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
+		connection.onDefinition(async (params): Promise<DefinitionLink[]> => {
+			const f = this.currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
 			if (f) {
-				const info = getWordInfo(params);
+				const info = this.getWordInfo(params);
 				if (info.variable) {
 
 					//return all reference locations
@@ -506,14 +415,14 @@ export class Server {
 			return [];
 		});
 
-		connection.onDidChangeWatchedFiles(_change => {
+		connection.onDidChangeWatchedFiles(async (_change) => {
 			// Monitored files have change in VSCode
 			connection.console.log('We received an file change event');
 			//TODO: update skriptfiles
 			//validateTextDocument(new TextDocument(_change.changes[0].uri));
 		});
 
-		connection.onDocumentSymbol((identifier) => {
+		connection.onDocumentSymbol(async (identifier) => {
 			return [
 				SymbolInformation.create('Item 1', SymbolKind.Function, {
 					start: { line: 0, character: 0 },
@@ -527,10 +436,12 @@ export class Server {
 		});
 
 		//this file will build its tokens for the first time
-		connection.languages.semanticTokens.on((params) => {
+		connection.languages.semanticTokens.on(async (params) => {
 			//const settings = getDocumentSettings(params.textDocument.uri);
-			const file = currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
+			const file = this.currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
+			const unlock = await this.currentWorkSpace.mutex.lock();
 			if (file == undefined) {
+				unlock();
 				//this happens in a changes preview. todo: add support for changes preview
 				return { data: [] };
 			}
@@ -540,6 +451,7 @@ export class Server {
 				//	//already tell the builder that next builds will be deltas
 				//	file.builder.previousResult(result.resultId);
 				//}
+				unlock();
 				return result;
 			}
 
@@ -547,7 +459,7 @@ export class Server {
 
 		//this file was modified while the tokens were already built
 		connection.languages.semanticTokens.onDelta((params) => {
-			const file = currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
+			const file = this.currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
 			if (file == undefined) {
 				return { edits: [] };
 			}
@@ -578,7 +490,7 @@ export class Server {
 
 		//connection.
 
-		connection.onCodeAction((params) => {
+		connection.onCodeAction(async (params) => {
 			const document = documents.get(params.textDocument.uri);
 			const change: WorkspaceChange = new WorkspaceChange();
 			const diagnosticsAssociated = params.context.diagnostics;
@@ -683,5 +595,78 @@ export class Server {
 
 		// Listen on the connection
 		connection.listen();
+
+
+	}
+	getGlobalSettings(): Thenable<IntelliSkriptSettings> {
+		return this.initialized.promise.then(() => this.connection.workspace.getConfiguration("IntelliSkript")).then((result) => {
+			return result ?? defaultSettings
+		});
+	}
+	getDocumentSettings(resource: string): Thenable<IntelliSkriptSettings> {
+		let result = this.documentSettings.get(resource);
+		if (!result) {
+			result = this.connection.workspace.getConfiguration({
+				scopeUri: resource,
+				section: 'intelliSkript'
+			});
+			this.documentSettings.set(resource, result);
+		}
+		return result;
+	}
+	getWordInfo(params: TextDocumentPositionParams): WordInfo {
+
+		//check the line
+		const f = this.currentWorkSpace.getSkriptFileByUri(URI.parse(params.textDocument.uri));
+		if (f) {
+			const lines = f.document.getText().split('\n');
+			const clickedLineText = lines[params.position.line];
+			const indentationEndIndex = IndentData.getIndentationEndIndex(clickedLineText);
+			if (params.position.character < indentationEndIndex) {
+				return {
+					variable: undefined
+				};//clicked on indentation
+			}
+
+			const variableRegex = /\{(.*?)\}/g;
+			let match;
+			const exactSection = f.getExactSectionAtLine(params.position.line);
+			while ((match = variableRegex.exec(clickedLineText))) {
+				if (params.position.character >= match.index && params.position.character < match.index + match[0].length) {
+					//clicked on a variable
+					const variable = exactSection.getVariableByName(match[1]);
+
+
+					if (variable != undefined) {
+						return {
+							variable: variable,
+							wordRange: {
+								start: { line: params.position.line, character: match.index },
+								end: { line: params.position.line, character: match.index + match[0].length }
+							}
+						};
+					}
+				}
+			}
+
+			//check for patterns
+			const patternReference = f.matches.getDeepestChildNodeAt(f.document.offsetAt(params.position));
+			if (patternReference) {
+				if (patternReference.matchedPattern) {
+					const pattern = patternReference.matchedPattern;
+					return {
+						pattern: pattern,
+						wordRange: {
+							start: f.document.positionAt(patternReference.start),
+							end: f.document.positionAt(patternReference.end)
+						}
+					};
+				}
+			}
+		}
+		//const currentDocumentText = params.textDocument.getText();
+		return {
+			variable: undefined
+		};
 	}
 }
