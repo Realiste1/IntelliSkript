@@ -389,7 +389,7 @@ export class SkriptSection extends SkriptSectionGroup {
 			const borderSize = currentNode.delimiter == '"' ? 1 : 0;
 			const tokenType = currentNode.delimiter == '"' ? TokenTypes.string : TokenTypes.variable;
 			let formatCodes: TokenModifiers[] = [];
-			let colorCode: TokenModifiers = TokenModifiers.bukkit_f;
+			let colorCode: TokenModifiers[] = [];
 
 			//just tokenize around the already processed child nodes
 			let currentPosition = currentNode.start - borderSize;
@@ -408,12 +408,12 @@ export class SkriptSection extends SkriptSectionGroup {
 							let nextChar = context.currentString[index + 1];
 							if (/[0-9a-fl-or]/.test(nextChar)) {
 								if (index > lastIndex) {
-									context.addToken(tokenType, lastIndex, index - lastIndex, ...formatCodes, colorCode);
+									context.addToken(tokenType, lastIndex, index - lastIndex, ...formatCodes, ...colorCode);
 									lastIndex = index;
 								}
 								if (nextChar == 'r') {
 									formatCodes = [];
-									colorCode = TokenModifiers.bukkit_f;
+									colorCode = [];
 								}
 								else {
 									//we guarantee the compiler that it's one of the token modifiers
@@ -422,7 +422,7 @@ export class SkriptSection extends SkriptSectionGroup {
 										//reset format codes, like in minecraft java edition.
 										formatCodes = [];
 										//prevent multiple color code modifiers
-										colorCode = newModifier;
+										colorCode = [newModifier];
 									}
 									else {
 										if (!formatCodes.includes(newModifier)) {
@@ -435,7 +435,7 @@ export class SkriptSection extends SkriptSectionGroup {
 						}
 					}
 					//we can guarantee there will be something to tokenize here, at least 3 tokens (when the string ends with &c" )
-					context.addToken(tokenType, lastIndex, end - lastIndex, ...formatCodes, colorCode);
+					context.addToken(tokenType, lastIndex, end - lastIndex, ...formatCodes, ...colorCode);
 				}
 			}
 

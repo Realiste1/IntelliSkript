@@ -211,9 +211,14 @@
 				"path": "./themes/IntelliSkript-Colorful.json"
 			},
 			{
-				"label": "IntelliSkript->VS Code",
+				"label": "IntelliSkript->Dark Modern",
 				"uiTheme": "vs-dark",
 				"path": "./themes/IntelliSkript-Dark-Modern.json"
+			},
+			{
+				"label": "IntelliSkrip->Light Modern",
+				"uiTheme": "vs",
+				"path": "./themes/IntelliSkript-Light-Modern.json"
 			}
 		]
 	},

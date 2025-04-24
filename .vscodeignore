@@ -5,7 +5,7 @@
 !client/dist/*.js
 !LICENSE
 !language-configuration.json
-!themes/*
+!themes/**
 !README.md
 !package.json
 !snippets/*
