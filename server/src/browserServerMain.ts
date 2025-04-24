@@ -9,9 +9,7 @@ import {
 	BrowserMessageWriter,
 	createConnection
 } from 'vscode-languageserver/browser';
-import { Server } from './server';
-import * as IntelliSkriptConstants from './IntelliSkriptConstants';
-import { Sleep } from './Thread';
+import { startServer } from './server';
 
 /* browser specific setup code */
 const messageReader = new BrowserMessageReader(self);
@@ -24,8 +22,7 @@ const connection = createConnection(messageReader, messageWriter);
 //if (IntelliSkriptConstants.IsDebugMode) {
 //	Sleep(5000);//give the debugger time to start
 //}
-console.log("initializing");
 /* from here on, all code is non-browser specific and could be shared with a regular extension */
 
 //run server.ts
-export let currentServer = new Server(connection);
+startServer(connection);

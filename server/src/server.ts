@@ -14,6 +14,7 @@ import { TokenTypes } from './TokenTypes';
 import { Deferred } from './Thread'
 import { WordInfo } from './skript/validation/wordInfo'
 
+
 export class Server {
 	initialized = new Deferred<void>();
 	globalSettings: Thenable<IntelliSkriptSettings> = this.getGlobalSettings();
@@ -669,4 +670,11 @@ export class Server {
 			variable: undefined
 		};
 	}
+}
+//run server.ts
+export let currentServer: Server;
+export function startServer(connection: Connection) {
+	console.log("initializing");
+	currentServer = new Server(connection);
+	
 }

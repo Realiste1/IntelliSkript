@@ -29,7 +29,7 @@ import { SemanticTokenLine, UnOrderedSemanticTokensBuilder } from './UnOrderedSe
 import { ReflectSectionSection } from './reflect/ReflectSectionSection';
 import { SkriptAliasesSection } from './SkriptAliasesSection';
 import { SkriptVariablesSection } from './SkriptVariablesSection';
-import { currentServer } from '../../browserServerMain'
+import { currentServer } from '../../server'
 
 
 export class SkriptFile extends SkriptSection {

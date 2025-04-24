@@ -4,7 +4,7 @@
 	"description": "IntelliSense for skript",
 	"author": "John Heikens",
 	"license": "GNU",
-	"version": "1.7.22",
+	"version": "1.7.23",
 	"icon": "./graphics/icon_128x128.png",
 	"repository": {
 		"type": "git",
@@ -38,7 +38,8 @@
 		"onLanguage:sk",
 		"onLanguage:skriptlang"
 	],
-	"browser": "./client/dist/browserClientMain",
+	"browser": "./client/dist/browserClientMain.js",
+	"main": "./client/dist/nodeClientMain.js",
 	"contributes": {
 		"snippets": [
 			{
@@ -205,9 +206,14 @@
 		],
 		"themes": [
 			{
-				"label": "IntelliSkript",
+				"label": "IntelliSkript->Colorful",
 				"uiTheme": "vs-dark",
-				"path": "./themes/IntelliSkript.json"
+				"path": "./themes/IntelliSkript-Colorful.json"
+			},
+			{
+				"label": "IntelliSkript->VS Code",
+				"uiTheme": "vs-dark",
+				"path": "./themes/IntelliSkript-Dark-Modern.json"
 			}
 		]
 	},

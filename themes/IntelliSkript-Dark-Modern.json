@@ -1,0 +1,111 @@
+{
+	"$schema": "vscode://schemas/color-theme",
+	"name": "Dark Modern",
+	"type": "dark modern",
+	"author": "John Heikens",
+	"semanticClass": "theme.dark.IntelliSkript.Dark-Modern",
+	"settings": {},
+	"uuid": "C364089E-4920-4113-9BEB-BF653A2BFB9C",
+	"colorSpaceName": "sRGB",
+	"comment": "intelligent language server based tokenization!",
+	"include": "./vs-code/dark_plus.json",
+	"semanticHighlighting": true,
+	"tokenColors": [
+		{
+			"scope": "string",
+			"settings": {
+				"foreground": "#ffffff"
+			}
+		}
+	],
+	"semanticTokenColors": {
+		//	"keyword": "#f371ff",
+		//	"regexp": {
+		//		"foreground": "#fc3bdc",
+		//		"bold": true
+		//	},
+		//	"event": {
+		//		"foreground": "#08c221",
+		//		"bold": true
+		//	},
+		//	//both declarations and definitions are italic.
+		"*.definition": {
+			"italic": true
+		},
+		"*.declaration": {
+			"italic": true
+		},
+		"effect": {
+			"foreground": "#c27d45",
+			"bold": true
+		},
+		"expression": {
+			"foreground": "#5dc0b8",
+			"bold": true
+		},
+		//	"namespace": {
+		//		"foreground": "#3c66c0",
+		//		"bold": true
+		//	},
+		"*.bukkit_0": {
+			"foreground": "#000000"
+		},
+		"*.bukkit_1": {
+			"foreground": "#0000AA"
+		},
+		"*.bukkit_2": {
+			"foreground": "#00AA00"
+		},
+		"*.bukkit_3": {
+			"foreground": "#00AAAA"
+		},
+		"*.bukkit_4": {
+			"foreground": "#AA0000"
+		},
+		"*.bukkit_5": {
+			"foreground": "#AA00AA"
+		},
+		"*.bukkit_6": {
+			"foreground": "#FFAA00"
+		},
+		"*.bukkit_7": {
+			"foreground": "#AAAAAA"
+		},
+		"*.bukkit_8": {
+			"foreground": "#555555"
+		},
+		"*.bukkit_9": {
+			"foreground": "#5555FF"
+		},
+		"*.bukkit_a": {
+			"foreground": "#55FF55"
+		},
+		"*.bukkit_b": {
+			"foreground": "#55FFFF"
+		},
+		"*.bukkit_c": {
+			"foreground": "#FF5555"
+		},
+		"*.bukkit_d": {
+			"foreground": "#FF55FF"
+		},
+		"*.bukkit_e": {
+			"foreground": "#FFFF55"
+		},
+		"*.bukkit_f": {
+			"foreground": "#FFFFFF"
+		},
+		"*.bukkit_l": {
+			"bold": true
+		},
+		"*.bukkit_m": {
+			"strikethrough": true
+		},
+		"*.bukkit_n": {
+			"underline": true
+		},
+		"*.bukkit_o": {
+			"italic": true
+		}
+	},
+}

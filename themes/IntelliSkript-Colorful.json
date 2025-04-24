@@ -1,14 +1,15 @@
 {
 	"$schema": "vscode://schemas/color-theme",
-	"name": "IntelliSkript",
+	"name": "Colorful",
 	"type": "dark modern",
 	"author": "John Heikens",
-	"semanticClass": "theme.dark.IntelliSkript",
+	"semanticClass": "theme.dark.IntelliSkript.Colorful",
 	"settings": {},
 	"uuid": "F8BE53EE-41FA-42B6-A1CF-30FA9825D5CB",
 	"colorSpaceName": "sRGB",
 	"comment": "intelligent language server based tokenization!",
 	"semanticHighlighting": true,
+	"include": "./vs-code/dark_plus.json",
 	"tokenColors": [
 		{
 			"scope": "comment",

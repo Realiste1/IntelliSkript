@@ -20,13 +20,14 @@
 		],
 		"description": "Creates a command"
 	},
+	//reflect
 	"condition": {
 		"prefix": [
 			"condition"
 		],
 		"body": [
 			"condition:",
-			"\tpatterns:$1{pattern}",
+			"\tpatterns:${1:pattern}",
 			"\ttrigger:"
 		],
 		"description": "Creates a condition"
@@ -37,11 +38,31 @@
 		],
 		"body": [
 			"expression:",
-			"\treturn type:$2{return type}",
-			"\tpatterns:$1{pattern}",
+			"\treturn type:${1:return type}",
+			"\tpatterns:${2:pattern}",
 			"\ttrigger:"
 		],
 		"description": "Creates an expression"
+	},
+	"effect": {
+		"prefix": [
+			"effect"
+		],
+		"body": [
+			"effect:",
+			"\tpatterns:${1:pattern}",
+			"\ttrigger:"
+		],
+		"description": "Creates an expression"
+	},
+	"import": {
+		"prefix": [
+			"import"
+		],
+		"body": [
+			"import:",
+			"\t"
+		]
 	},
 	//sections
 	"looparray": {
@@ -54,8 +75,10 @@
 		"description": "Loops over an array"
 	},
 	//miscellaneous
-	"multi line comment":{
-		"prefix": ["###"],
+	"multi line comment": {
+		"prefix": [
+			"###"
+		],
 		"body": [
 			"###",
 			"${1:your comment here}",

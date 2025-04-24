@@ -1,10 +1,11 @@
 **
 !graphics/icon_128x128.png
 !graphics/skript icon.png
-!server/dist/browserServerMain.js
-!client/dist/browserClientMain.js
+!server/dist/*.js
+!client/dist/*.js
 !LICENSE
 !language-configuration.json
 !themes/*
 !README.md
 !package.json
+!snippets/*
