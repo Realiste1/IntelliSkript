@@ -6,3 +6,5 @@ out
 *.cpuprofile
 *.map
 resourceFiles.ts
+#for unsaved powerpoint presentations
+~*

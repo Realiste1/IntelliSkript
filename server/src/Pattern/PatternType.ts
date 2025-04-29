@@ -8,5 +8,8 @@ export enum PatternType {
 	count
 }
 
+export const SubstitutablePatterns = [PatternType.expression, PatternType.type];
+
 export const canHaveSubPattern = (patternType:PatternType) => patternType != PatternType.type;
-export const canBeSubPattern = (patternType:PatternType) => patternType == PatternType.expression;
+//type can be a subpattern as literal
+export const canBeSubPattern = (patternType:PatternType) => SubstitutablePatterns.includes(patternType);

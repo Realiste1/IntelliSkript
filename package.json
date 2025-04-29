@@ -41,12 +41,6 @@
 	"browser": "./client/dist/browserClientMain.js",
 	"main": "./client/dist/nodeClientMain.js",
 	"contributes": {
-		"snippets": [
-			{
-				"language": "skript",
-				"path": "./snippets/snippets.code-snippets"
-			}
-		],
 		"languages": [
 			{
 				"id": "skript",
@@ -115,6 +109,11 @@
 				"id": "expression",
 				"superType": "property",
 				"description": "an expression"
+			},
+			{
+				"id": "condition",
+				"superType": "property",
+				"description": "a condition (if)"
 			},
 			{
 				"id": "effect",

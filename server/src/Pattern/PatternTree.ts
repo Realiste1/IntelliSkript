@@ -162,7 +162,7 @@ export class PatternTree {
 		//loop over all charachters in this member of the hierarchy
 		//for example, when we are processing the [] of "send [the | % to the] player", we would loop over "the | % to the".
 		for (let i = Hierarchy.start; i < Hierarchy.end; i++) {
-			let newNodes: PatternTreeNode[] | undefined;
+			let newNodes: PatternTreeNode[];
 			let char = pattern[i];
 			if (char == '(') {
 				//required segment, needed for pipes. for example, a(b|c) != ab|c
@@ -179,6 +179,9 @@ export class PatternTree {
 						i = node.end; //+1 but the +1 gets added in the loop already
 					}
 				}
+				else {
+					newNodes = currentNodes;
+				}
 			}
 			else {
 				newNodes = [];
@@ -193,13 +196,16 @@ export class PatternTree {
 					else if (char == '%') {
 						//check which type this is
 
-						let index = -1;
 						let argumentIndex = 0;
 						//find the argument index. this is also safe for if we want to access elements earlier
 						//like when we first process the second %, then the first one
-						while ((index = pattern.indexOf('%', index + 1)) != i) {
-							if (index ? pattern[index - 1] != '\\' : true)
-								argumentIndex++;
+						let match;
+						//declare regexp outside scope so it remembers lastindex
+						let argumentRegexp = /(?<!\\)%/g;
+						while ((match = argumentRegexp.exec(data.regexPatternString))) {
+							if (match.index >= i) break;
+							argumentIndex++;
+
 						}
 						if (argumentIndex < data.expressionArguments.length) {
 							//let node = new TypeNode(data.expressionArguments[argumentIndex]);
@@ -207,11 +213,20 @@ export class PatternTree {
 							for (const possibleType of typeState.possibleTypes) {
 								//for debugger
 								if (possibleType.section) {
-									let node = currentSplitNode.typeOrderedChildren.get(possibleType.skriptPatternString);
-									if (!node) {
-										currentSplitNode.typeOrderedChildren.set(possibleType.skriptPatternString, node = new TypeNode(possibleType.section as SkriptTypeSection));
+									//adds a typenode to the list of typenodes
+									let addTypeNode = (addTo: Map<string, PatternTreeNode>) => {
+
+										let node = addTo.get(possibleType.skriptPatternString);
+										if (!node) {
+											addTo.set(possibleType.skriptPatternString, node = new TypeNode(possibleType.section as SkriptTypeSection));
+										}
+										newNodes.push(node);
 									}
-									newNodes.push(node);
+
+									//literal
+									if (!typeState.staticOnly)
+										addTypeNode(currentSplitNode.instanceTypeChildren);
+									addTypeNode(currentSplitNode.staticTypeChildren);
 								}
 							}
 						}

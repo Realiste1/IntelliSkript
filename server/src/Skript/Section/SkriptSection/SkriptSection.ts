@@ -95,7 +95,7 @@ export class SkriptSection extends SkriptSectionGroup {
 		let parts: string[];
 		let currentPosition = start;
 		if (str[0] == '*') {
-			result.isLiteral = true;
+			result.staticOnly = true;
 			currentPosition++;
 			parts = str.substring(1).split('/');
 		}
@@ -145,11 +145,7 @@ export class SkriptSection extends SkriptSectionGroup {
 	 * @param matchPatternEnd the end of the match, relative to the pattern
 	 */
 	private tokenizeMatch(context: SkriptContext, pattern: TransformedPattern, match: PatternData, matchPatternStart: integer = 0, matchPatternEnd: integer = pattern.pattern.length) {
-		const tokenType = //match.section instanceof SkriptPropertySection ?
-			match.patternType == PatternType.event ? TokenTypes.event :
-				match.patternType == PatternType.expression ?
-					TokenTypes.expression :
-					TokenTypes.effect;
+		const tokenType: TokenTypes = TokenTypes[PatternType[match.patternType] as keyof typeof TokenTypes];//match.section instanceof SkriptPropertySection ?
 
 		/**the point in the pattern to start tokenizing from. will move to the end of submatches if there are any*/
 		let tokenizeFrom = matchPatternStart;
@@ -404,7 +400,8 @@ export class SkriptSection extends SkriptSectionGroup {
 					//process string and read all bukkit color / format codes
 					let lastIndex = start;
 					for (let index = start; index < end; index++) {
-						if (context.currentString[index] == '&' && index + 1 < end) {
+						const currentChar = context.currentString[index];
+						if (currentChar == '&' && index + 1 < end) {
 							let nextChar = context.currentString[index + 1];
 							if (/[0-9a-fl-or]/.test(nextChar)) {
 								if (index > lastIndex) {
@@ -432,6 +429,10 @@ export class SkriptSection extends SkriptSectionGroup {
 									}
 								}
 							}
+						}
+						//double #
+						else if (currentChar == "#" && context.currentString[index + 1] == "#") {
+							context.addDiagnostic(index, 2, "double #s don't get replaced to single #s anymore", DiagnosticSeverity.Warning, "IntelliSkript->Nest->Double Hashtags");
 						}
 					}
 					//we can guarantee there will be something to tokenize here, at least 3 tokens (when the string ends with &c" )

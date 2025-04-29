@@ -14,7 +14,6 @@ export enum TokenTypes {
 	label,
 	macro,
 	method,
-	modifier,
 	number,
 	parameter,
 	property,
@@ -31,6 +30,7 @@ export enum TokenTypes {
 	permission,
 	effect,
 	expression,
+	condition,
 	//the length of this enum
 	length
 }

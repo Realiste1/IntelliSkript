@@ -3,7 +3,7 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Run Web Extension",
+			"name": "Web Extension",
 			"type": "extensionHost",
 			"debugWebWorkerHost": true,
 			"request": "launch",
@@ -24,7 +24,7 @@
 			//"trace": true
 		},
 		{
-			"name": "Run Node Extension",
+			"name": "Node Extension",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",

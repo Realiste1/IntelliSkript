@@ -4,15 +4,15 @@ import { PatternData } from "../data/PatternData";
 export class PatternTreeNode {
 	//a list of children, mapped from a - z etc.
 	//each child is just a normal node, for example the 'a' in 'say %'
-	stringOrderedChildren: Map<string, PatternTreeNode> = new Map<string, PatternTreeNode>();
+	stringOrderedChildren = new Map<string, PatternTreeNode>();
 
 	//when the string doesn't continue, we will check the type nodes.
-	typeOrderedChildren: Map<string, PatternTreeNode> = new Map<string, PatternTreeNode>();
+	//children which are instances: 'the player', 'a creeper'
+	instanceTypeChildren = new Map<string, PatternTreeNode>();
+	//children which are static 'player', 'creeper'
+	staticTypeChildren = new Map<string, PatternTreeNode>();
 
 	regExpOrderedChildren: PatternTreeNode[] = [];
-	getTypeChild(type: SkriptTypeSection) {
-		return this.typeOrderedChildren.get(type.getKey());
-	}
 	//otherNodes: PatternTreeNode[] = new Array<PatternTreeNode>();
 	//when this can be an end node of a certain pattern, the end node is set. sometimes another pattern continues after this
 	//for example:

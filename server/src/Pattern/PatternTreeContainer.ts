@@ -1,7 +1,7 @@
-import { PatternData } from "../pattern/data/PatternData";
+import { PatternData, TypeData } from "../pattern/data/PatternData";
 import { PatternMatcher } from '../pattern/PatternMatcher';
 import { PatternTree } from '../pattern/PatternTree';
-import { canBeSubPattern, PatternType } from '../pattern/PatternType';
+import { canBeSubPattern, canHaveSubPattern, PatternType, SubstitutablePatterns } from '../pattern/PatternType';
 import { SkriptPatternCall } from '../pattern/SkriptPattern';
 import { SkriptTypeSection } from '../skript/section/custom/SkriptTypeSection';
 import { SkriptFunction } from "../skript/section/SkriptFunctionSection";
@@ -11,6 +11,7 @@ import { MatchResult } from './match/matchResult';
 import { PatternMatch } from './match/PatternMatch';
 import { PatternTreeNode } from './patternTreeNode/PatternTreeNode';
 import { RegExpNode } from "./patternTreeNode/RegExpNode";
+import { TypeNode } from './patternTreeNode/TypeNode';
 
 export class PatternTreeContainer implements PatternMatcher {
 	/** a list of expression trees, this is to save time (to not recursively have to get patterns from parents or something). we will start at the top and end at this container.
@@ -27,11 +28,11 @@ export class PatternTreeContainer implements PatternMatcher {
 		this.containersToTraverse.push(this);
 	}
 
-	testTypeNodes(testChild: (testChild: PatternTreeNode) => boolean, node: PatternTreeNode, possibleTypes: SkriptTypeState) {
+	testTypeNodes(testChild: (testChild: PatternTreeNode) => boolean, typeNodes: Map<string, PatternTreeNode>, possibleTypes: SkriptTypeState) {
 		//make sure there are any types to check. this also makes sure that we can check for object, the base class of any type.
 		if (!possibleTypes.possibleTypes.length) return;
 		const testClass = (testKey: string): boolean => {
-			const typeChild = node.typeOrderedChildren.get(testKey);
+			const typeChild = typeNodes.get(testKey);
 			return typeChild != undefined && testChild(typeChild);
 		}
 		const testedTypes = new Set<string>();
@@ -50,7 +51,7 @@ export class PatternTreeContainer implements PatternMatcher {
 
 		//when there is a possibility that the type is unknown, test all the possible types
 		if (testAllTypes) {
-			for (const [key, val] of node.typeOrderedChildren) {
+			for (const [key, val] of typeNodes) {
 				if (!testedTypes.has(key)) {
 					if (testChild(val)) {
 						return;
@@ -65,8 +66,9 @@ export class PatternTreeContainer implements PatternMatcher {
 
 	canSubstitute(progress: MatchProgress) {
 		//when the pattern can be a subpattern and it substitutes to a pattern which can be a subpattern at the same node, infinite recursion can occur
-		return !canBeSubPattern(progress.patternType)
-			|| (progress.currentNode !== progress.startNode);
+		//wouldn't work when a pattern starts with a type literal for example
+		return canHaveSubPattern(progress.patternType) &&
+			(!canBeSubPattern(progress.patternType) || (progress.currentNode !== progress.startNode));
 	}
 
 
@@ -126,14 +128,19 @@ export class PatternTreeContainer implements PatternMatcher {
 				//even when checkIndex == pattern.length, we should check base classes, because we didn't determine yet which type node it is
 				let fullMatch: MatchResult | undefined;
 
-				const testNode = (parentProgress: MatchProgress): boolean => {
+				const testParentNode = (parentProgress: MatchProgress): boolean => {
 					const testTypeChild = (testChild: PatternTreeNode): boolean => {
 						//clone
 						const testProgress: MatchProgress = { ...parentProgress, currentNode: testChild, startNode: testChild };
 						fullMatch = this.getMatchingPatternPart(testPattern, testProgress, checkIndex, argumentIndex, recursion + 1);
 						return fullMatch != undefined;
 					}
-					this.testTypeNodes(testTypeChild, parentProgress.currentNode, endNodeData.returnType);
+					if (progress.patternType == PatternType.expression) {
+						this.testTypeNodes(testTypeChild, parentProgress.currentNode.instanceTypeChildren, endNodeData.returnType);
+					}
+					else {//we don't have to check for both, as all statictypechildren also exist on instancetypechildren
+						this.testTypeNodes(testTypeChild, parentProgress.currentNode.staticTypeChildren, new SkriptTypeState(endNodeData as TypeData));
+					}
 
 					if (fullMatch) {
 						//add the submatch to its parent match
@@ -148,18 +155,22 @@ export class PatternTreeContainer implements PatternMatcher {
 
 				if (progress.parent) {
 					//maybe this is a submatch of a higher level match.
-					if (testNode(progress.parent)) return fullMatch;
+					if (testParentNode(progress.parent)) return fullMatch;
 				}
 				if (this.canSubstitute(progress)) {
 					//maybe this is the first submatch of a higher level match.
 					for (const container of this.containersToTraverse) {
 						const root = container.trees[PatternType.expression].compileAndGetRoot();
 						//create a new parent node, which replaces the current node. the current node becomes a child.
-						if (testNode({
+						if (testParentNode({
 							start: progress.start,
+							//the old parent node becomes 'grandparent'
 							parent: progress.parent,
 							startNode: root,
 							currentNode: root,
+							//the pattern type has to be expression, as that's the only pattern type which can substitute and be a substitute
+							//we don't have to test for type, because type can't substitute.
+							//we don't have to test for event, because we'd already have tested that as progress.parent.
 							patternType: PatternType.expression
 						})) return fullMatch;
 					}
@@ -203,17 +214,17 @@ export class PatternTreeContainer implements PatternMatcher {
 				//the pattern call is shorter than the patterns
 				return undefined;
 
-			//maybe this part of the pattern belongs to a submatch?
-			const hasValidTypeNodes =
-				(progress.currentNode.typeOrderedChildren.size > 0) &&
-				(index == 0 || isSeparator(index - 1))
-
+			//maybe the current part of the pattern belongs to a submatch?
+			const canSubMatch = index == 0 || isSeparator(index - 1);
+			const hasValidInstanceNodes = canSubMatch && progress.currentNode.instanceTypeChildren.size > 0;
+			const hasValidStaticNodes = canSubMatch && progress.currentNode.staticTypeChildren.size > 0;
+			let hasValidTypeNodes = hasValidInstanceNodes && hasValidStaticNodes;
 
 
 			const currentChar = pattern[index];
 			const charChild = progress.currentNode.stringOrderedChildren.get(currentChar);
 			if (charChild) {
-				if (hasValidTypeNodes) {
+				if (hasValidInstanceNodes || hasValidStaticNodes) {
 					//check the normal path (just traversing the tree based on charachters we encounter) first. the only way to do that without queueing the alternatives is calling a function.
 
 					//clone
@@ -229,7 +240,7 @@ export class PatternTreeContainer implements PatternMatcher {
 					continue;
 				}
 			}
-			if (progress.currentNode.typeOrderedChildren.size) {
+			if (progress.currentNode.instanceTypeChildren.size) {
 				let testResult: MatchResult | undefined;
 				let newIndex = index;
 				let newArgumentIndex = argumentIndex;
@@ -249,25 +260,28 @@ export class PatternTreeContainer implements PatternMatcher {
 					const currentArgument = testPattern.expressionArguments[argumentIndex];
 					newIndex++;
 					newArgumentIndex++;
-					this.testTypeNodes(testClass, progress.currentNode, currentArgument);
+					this.testTypeNodes(testClass, progress.currentNode.instanceTypeChildren, currentArgument);
 					if (testResult)
 						return testResult;
 				}
 			}
 			//all possibilities have been tested, but there haven't been any children who fit this pattern. we need to submatch.
 			//we will try finding a pattern from the expression trees which returns an instance of the expected type.
-			if (hasValidTypeNodes) {
-				//infinite recursion happens when the currentnode is root
-				if (this.canSubstitute(progress)) {
-					let testResult: MatchResult | undefined;
-					for (const container of this.containersToTraverse) {
-						//clone
-						const nextProgress: MatchProgress = { ...progress };
 
-						const root = container.trees[PatternType.expression].compileAndGetRoot();
+			//infinite recursion happens when the currentnode is root
+			if (this.canSubstitute(progress)) {
+				for (const substitutablePatternType of SubstitutablePatterns) {
+					if (substitutablePatternType == PatternType.type ? hasValidStaticNodes : hasValidInstanceNodes) {
+						let testResult: MatchResult | undefined;
+						for (const container of this.containersToTraverse) {
+							//clone
+							const nextProgress: MatchProgress = { ...progress };
 
-						testResult = this.getMatchingPatternPart(testPattern, { start: index, parent: nextProgress, currentNode: root, startNode: root, patternType: PatternType.expression }, index, argumentIndex, recursion + 1);
-						if (testResult) return testResult;
+							const root = container.trees[substitutablePatternType].compileAndGetRoot();
+
+							testResult = this.getMatchingPatternPart(testPattern, { start: index, parent: nextProgress, currentNode: root, startNode: root, patternType: substitutablePatternType }, index, argumentIndex, recursion + 1);
+							if (testResult) return testResult;
+						}
 					}
 				}
 			}

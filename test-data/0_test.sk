@@ -1,6 +1,16 @@
+effect:
+	patterns:
+		teststatic %*object%
+
 command /backpack:
 	aliases: bp
 	trigger:
+		teststatic number
+
+		
+		
+
+		loop all players:
 		add 1 to {_c}
 		set {_c} to 0
 		set {_cc} to 1
@@ -20,9 +30,8 @@ on inventory close:
 			add 1 to {_c}
 			
 function find2BlockGap(xcoord: number,zcoord: number):: location:
-
-expression a %string%:
-
+	return {_xcoord}
+	
 on right click holding lead:
 	drop apple named "a" {_} {_}
 	set a "b" to {_c}

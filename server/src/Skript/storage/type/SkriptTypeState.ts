@@ -5,7 +5,7 @@ export class SkriptTypeState {
 	//can be multiple types, like %string/number%
 	possibleTypes: TypeData[] = [];
 	isArray = false;
-	isLiteral = false;
+	staticOnly = false;
 	canBeEmpty = false;
 	constructor(...possibleTypes: TypeData[]) {
 		this.possibleTypes = possibleTypes;

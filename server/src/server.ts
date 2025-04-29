@@ -1,4 +1,4 @@
-import { ChangeAnnotation, CodeAction, CodeActionKind, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, MarkupContent, MarkupKind, Range, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
+import { ChangeAnnotation, CodeAction, CodeActionKind, CompletionItem, CompletionItemKind, CompletionParams, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, InsertTextFormat, MarkupContent, MarkupKind, Position, Range, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as IntelliSkriptConstants from './IntelliSkriptConstants';
@@ -13,6 +13,9 @@ import { TokenModifiers } from './TokenModifiers';
 import { TokenTypes } from './TokenTypes';
 import { Deferred } from './Thread'
 import { WordInfo } from './skript/validation/wordInfo'
+import { PatternTree } from './pattern/PatternTree';
+import { PatternType } from './pattern/PatternType';
+import { PatternTreeNode } from './pattern/patternTreeNode/PatternTreeNode';
 
 
 export class Server {
@@ -142,14 +145,14 @@ export class Server {
 						textDocumentSync: TextDocumentSyncKind.Incremental,
 
 						// Tell the client that this server supports code completion.
-						//completionProvider: {
-						//	//the charachter to type to request a completion
-						//	triggerCharacters: [' '],
-						//	//the charachter to type to complete the completion
-						//	allCommitCharacters: [';'],
-						//	//we will provide additional information for each completion
-						//	resolveProvider: false,
-						//},
+						completionProvider: {
+							//the charachter to type to request a completion
+							//triggerCharacters: [' '],
+							//the charachter to type to complete the completion
+							//allCommitCharacters: [';'],
+							//we will provide additional information for each completion
+							resolveProvider: true,
+						},
 						//we will show where symbols are defined
 						definitionProvider: true,
 						codeActionProvider: true,
@@ -495,7 +498,8 @@ export class Server {
 			const document = documents.get(params.textDocument.uri);
 			const change: WorkspaceChange = new WorkspaceChange();
 			const diagnosticsAssociated = params.context.diagnostics;
-			if (diagnosticsAssociated.length > 0) {
+			if (diagnosticsAssociated.length > 0 && document) {
+				const a = change.getTextEditChange(document);
 				const currentDiagnostic = params.context.diagnostics[0];
 				if (currentDiagnostic.code != undefined) {
 					const codeAction: CodeAction = {
@@ -503,51 +507,50 @@ export class Server {
 						kind: CodeActionKind.QuickFix,
 						data: params.textDocument.uri
 					};
-					if ((currentDiagnostic.code as string).startsWith("IntelliSkript->Indent")) {
+					const codeString = currentDiagnostic.code as string;
+					if (codeString.startsWith("IntelliSkript->Indent")) {
 						const data = currentDiagnostic.data;
 						const indentString = data as string;
 						//change.createFile(`${folder}/newFile.bat`, { overwrite: true });
-						if (document) {
-							const a = change.getTextEditChange(document);
-							a.replace({
-								start: {
-									line: params.range.start.line,
-									character: 0
-								}, end:
-								{
-									line: params.range.start.line,
-									character: IndentData.getIndentationEndIndex(document.getText().split("\n")[params.range.start.line])
-								}
-							}, indentString, ChangeAnnotation.create('Insert the expected amount of spaces and tabs', true));
-						}
+						a.replace({
+							start: {
+								line: params.range.start.line,
+								character: 0
+							}, end:
+							{
+								line: params.range.start.line,
+								character: IndentData.getIndentationEndIndex(document.getText().split("\n")[params.range.start.line])
+							}
+						}, indentString, ChangeAnnotation.create('Insert the expected amount of spaces and tabs', true));
 
 						codeAction.title = "Fix Indentation";
 						codeAction.edit = change.edit;
-						return [
-							codeAction
-						];
+						return [codeAction];
 					}
-					if ((currentDiagnostic.code as string).startsWith("IntelliSkript->Performance->Braces")) {
+					else if (codeString.startsWith("IntelliSkript->Performance->Braces")) {
 
 
 						//change.createFile(`${folder}/newFile.bat`, { overwrite: true });
-						if (document) {
-							const a = change.getTextEditChange(document);
-							a.insert(
-								currentDiagnostic.range.start, "(");
-							a.insert(
-								currentDiagnostic.range.end, ")",
-								ChangeAnnotation.create('Insert braces to improve performance', true));
-						}
+						a.insert(
+							currentDiagnostic.range.start, "(");
+						a.insert(
+							currentDiagnostic.range.end, ")",
+							ChangeAnnotation.create('Insert braces to improve performance', true));
 						//const b = change.getTextEditChange({ uri: `${folder}/newFile.bat`, version: null });
 						//b.insert({ line: 0, character: 0 }, 'The initial content', ChangeAnnotation.create('Add additional content', true));
 
 						codeAction.isPreferred = true;
 						codeAction.title = "Add Braces";
 						codeAction.edit = change.edit;
-						return [
-							codeAction
-						];
+						return [codeAction];
+					}
+					else if (codeString.startsWith("IntelliSkript->Nest->Double Hashtags")) {
+						a.delete({ start: currentDiagnostic.range.start, end: { line: currentDiagnostic.range.start.line, character: currentDiagnostic.range.start.character + 1 } })
+						//maybe they just want double hashtags
+						codeAction.isPreferred = false;
+						codeAction.title = "Remove Hashtag";
+						codeAction.edit = change.edit;
+						return [codeAction];
 					}
 				}
 			}
@@ -555,40 +558,122 @@ export class Server {
 		});
 
 		//		// This handler provides the initial list of the completion items.
-		//		connection.onCompletion(
-		//			(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		//				// The pass parameter contains the position of the text document in
-		//				// which code complete got requested. For the example we ignore this
-		//				// info and always provide the same completion items.
-		//				return [
-		//					{
-		//						label: 'function',
-		//						kind: CompletionItemKind.Text,
-		//						data: 1
-		//					},
-		//					{
-		//						label: 'command',
-		//						kind: CompletionItemKind.Text,
-		//						data: 2
-		//					}
-		//				];
-		//			}
-		//		);
-		//
-		//		// This handler resolves additional information for the item selected in
-		//		// the completion list.
-		//		connection.onCompletionResolve(
-		//			(item: CompletionItem): CompletionItem => {
-		//				if (item.data === 1) {
-		//					item.detail = 'create a function';
-		//					item.documentation = 'create a function';
-		//				} else if (item.data === 2) {
-		//					item.detail = 'create a command';
-		//					item.documentation = 'create a command';
-		//				}
-		//				return item;
-		//			}
-		//		);
+		connection.onCompletion(
+			(completionParams: CompletionParams): CompletionItem[] => {
+				let results: CompletionItem[] = [];
+				// The pass parameter contains the position of the text document in
+				// which code complete got requested. For the example we ignore this
+				// info and always provide the same completion items.
+				const file = this.currentWorkSpace.getSkriptFileByUri(URI.parse(completionParams.textDocument.uri));
+				if (file) {
+					let result: CompletionItem = { kind: CompletionItemKind.Snippet, insertTextFormat: InsertTextFormat.Snippet, label: 'no label' };
+					const startPos = file.document.offsetAt(completionParams.position);
+
+					if (completionParams.position.character == 1) {
+						const startSnippets = [
+							{
+								label: 'function',
+								insertText: [
+									"function ${1:name}(${2:arguments}) :: ${3:return type}:"
+								].join("\n")
+							},
+							{
+								label: 'command',
+								insertText: [
+									"command /${1:name} ${2:arguments}:",
+									"\tdescription: ${3:description}",
+									"\tpermission: ${4:permission}",
+									"\ttrigger:"
+								].join("\n")
+							},
+							{
+								label: 'condition',
+								insertText: [
+									"condition:",
+									"\tpatterns: ${1:pattern}",
+									"\ttrigger:"
+								].join("\n")
+							},
+							{
+								label: 'expression',
+								insertText: [
+									"expression:",
+									"\treturn type: ${1:return type}",
+									"\tpatterns: ${2:pattern}"
+								].join("\n")
+							},
+							{
+								label: 'effect',
+								insertText: [
+									"effect:",
+									"\tpatterns: ${1:pattern}",
+									"\ttrigger:"
+								].join("\n")
+							},
+							{
+								label: 'import',
+								insertText: [
+									"import:",
+									"\t"
+								].join("\n")
+							},
+							{
+								label: 'looparray',
+								insertText: [
+									"loop {${1:loop variable}::*}:"
+								].join("\n")
+							},
+							{
+								label: 'multi line comment',
+								insertText: [
+									"###",
+									"${1:your comment here}",
+									"###"
+								].join("\n")
+							}
+						];
+						//start of line
+						for (const startSnippet of startSnippets) {
+							if (file.text.substring(startPos - 1, startPos) == startSnippet.label[0]) {
+								results.push({
+									...result,
+									...startSnippet
+								},)
+							}
+						}
+					}
+					//check if there are any possible patterns
+					const section = file.getExactSectionAtLine(completionParams.position.line);
+					//calculate patterns
+					const sectionContainer = section.getPatternTree();
+					if (sectionContainer) {
+						for (const container of sectionContainer.containersToTraverse) {
+							const typeToCheck = PatternType.effect;
+							const tree = container.trees[typeToCheck];
+							const root = tree.compileAndGetRoot();
+							//traverse nodes following the charachters until we reached the end of the pattern in construction. then branch out to see possible pattern types
+							//for()
+						}
+					}
+				}
+				return results;
+			}
+		);
+
+		// This handler resolves additional information for the item selected in
+		// the completion list.
+		connection.onCompletionResolve(
+			(item: CompletionItem): CompletionItem => {
+				if (item.data === 1) {
+					item.detail = 'create a function';
+					item.documentation = 'create a function';
+				} else if (item.data === 2) {
+					item.detail = 'create a command';
+					item.documentation = 'create a command';
+				}
+				return item;
+			}
+		);
 
 		// Make the text document manager listen on the connection
 		// for open, change and close text document events
@@ -676,5 +761,5 @@ export let currentServer: Server;
 export function startServer(connection: Connection) {
 	console.log("initializing");
 	currentServer = new Server(connection);
-	
+
 }

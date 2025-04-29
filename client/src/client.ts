@@ -30,6 +30,7 @@ export async function startClient(creationFunction: (context: ExtensionContext, 
 	workspace.registerTextDocumentContentProvider(intelliskriptScheme, myProvider);
 
 	client = creationFunction(context, clientOptions);
+	//client.registerFeature({ fillInitializeParams(capabilities.textDocument.completion.completionItem.snippetSupport = true) })
 	return activateClient(context, client);
 }
 

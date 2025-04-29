@@ -28,6 +28,8 @@ export class ReflectExpressionSection extends ReflectPatternContainerSection {
 			case "reset": this.hasReset = true; break;
 			case "remove": this.hasRemove = true; break;
 			case "remove all": this.hasRemoveAll = true; break;
+			//TODO: parse
+			case "usable in": keywordEnd = "usable in".length; break;
 			//set %type%
 			default: if (context.currentString.startsWith("set ")) {
 				this.parseType(context, 'set '.length);
