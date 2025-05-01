@@ -2,17 +2,19 @@ import { SkriptTypeSection } from '../../skript/section/custom/SkriptTypeSection
 import { PatternData } from "../data/PatternData";
 
 export class PatternTreeNode {
+	parentGroups: Map<string, PatternTreeNode>[] = [];
 	//a list of children, mapped from a - z etc.
-	//each child is just a normal node, for example the 'a' in 'say %'
+	/**each child is just a normal node, for example the 'a' in 'say %'*/
 	stringOrderedChildren = new Map<string, PatternTreeNode>();
 
 	//when the string doesn't continue, we will check the type nodes.
-	//children which are instances: 'the player', 'a creeper'
+	/**children which are instances: 'the player', 'a creeper'*/
 	instanceTypeChildren = new Map<string, PatternTreeNode>();
-	//children which are static 'player', 'creeper'
+	/**children which are static 'player', 'creeper'*/
 	staticTypeChildren = new Map<string, PatternTreeNode>();
 
-	regExpOrderedChildren: PatternTreeNode[] = [];
+	/**could as well be an array, but to make things more simple, lets keep the same data type */
+	regExpOrderedChildren = new Map<string, PatternTreeNode>();
 	//otherNodes: PatternTreeNode[] = new Array<PatternTreeNode>();
 	//when this can be an end node of a certain pattern, the end node is set. sometimes another pattern continues after this
 	//for example:

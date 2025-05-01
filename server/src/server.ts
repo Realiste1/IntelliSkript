@@ -16,6 +16,10 @@ import { WordInfo } from './skript/validation/wordInfo'
 import { PatternTree } from './pattern/PatternTree';
 import { PatternType } from './pattern/PatternType';
 import { PatternTreeNode } from './pattern/patternTreeNode/PatternTreeNode';
+import { SkriptSection } from './skript/section/skriptSection/SkriptSection';
+import { MatchProgress } from './pattern/match/MatchProgress';
+import { SkriptPatternCall } from './pattern/SkriptPattern';
+import { removeDuplicates } from './pattern/removeDuplicates';
 
 
 export class Server {
@@ -492,6 +496,8 @@ export class Server {
 			return { data: [] };
 		});
 
+
+
 		//connection.
 
 		connection.onCodeAction(async (params) => {
@@ -642,19 +648,19 @@ export class Server {
 							}
 						}
 					}
-					//check if there are any possible patterns
+					const line = file.getLine(completionParams.position.line);
+					const indentationEndIndex = IndentData.getIndentationEndIndex(line);
+
+					//todo: check if we're not typing behind comments
+
+					const patternToComplete = line.substring(indentationEndIndex, completionParams.position.character);
+					const wordToComplete = patternToComplete.substring(patternToComplete.lastIndexOf(' ') + 1);
 					const section = file.getExactSectionAtLine(completionParams.position.line);
-					//calculate patterns
-					const sectionContainer = section.getPatternTree();
-					if (sectionContainer) {
-						for (const container of sectionContainer.containersToTraverse) {
-							const typeToCheck = PatternType.effect;
-							const tree = container.trees[typeToCheck];
-							const root = tree.compileAndGetRoot();
-							//traverse nodes following the charachters until we reached the end of the pattern in construction. then branch out to see possible pattern types
-							//for()
-						}
+					const completions = removeDuplicates(this.getPossibleCompletions(section, patternToComplete));
+					for (const completion of completions) {
+						results.push({ textEdit: { range: { start: completionParams.position, end: completionParams.position }, newText: completion }, label: wordToComplete + completion, filterText: '#' })
 					}
+
 				}
 				return results;
 			}
@@ -670,6 +676,10 @@ export class Server {
 				} else if (item.data === 2) {
 					item.detail = 'create a command';
 					item.documentation = 'create a command';
+				}
+				else {
+					item.detail = 'test';
+					item.documentation = 'test';
 				}
 				return item;
 			}
@@ -754,6 +764,62 @@ export class Server {
 		return {
 			variable: undefined
 		};
+	}
+	getPossibleCompletions(section: SkriptSection, patternToComplete: string): string[] {
+		const completions: string[] = [];
+		//check if there are any possible patterns
+		//calculate patterns
+		const sectionContainer = section.getPatternTree();
+		if (sectionContainer) {
+			for (const container of sectionContainer.containersToTraverse) {
+				const typeToCheck = PatternType.effect;
+				const tree = container.trees[typeToCheck];
+				const root = tree.compileAndGetRoot();
+				//traverse nodes following the charachters until we reached the end of the pattern in construction. then branch out to see possible pattern types
+				let progress: MatchProgress = { testPattern: new SkriptPatternCall(patternToComplete, typeToCheck), patternType: typeToCheck, start: 0, index: 0, argumentIndex: 0, startNode: root, currentNode: root, subMatches: [] }
+
+				interface expandNode {
+					node: PatternTreeNode, pattern: string
+				};
+
+				let nodesToExpandFrom: expandNode[] = [];
+
+				let nodesToFollow = [progress];
+				let currentProgress: MatchProgress | undefined;
+				//the last array elements will be processed first
+				while (currentProgress = nodesToFollow.pop()) {
+					const nextSteps = sectionContainer.stepTreeNode(currentProgress);
+					if (currentProgress.result) {
+						//as it turns out, the line is correct as it is.
+					}
+					for (const nextStep of nextSteps) {
+						if (nextStep.index >= patternToComplete.length) {
+							nodesToExpandFrom.push({ node: nextStep.currentNode, pattern: '' });
+						}
+						else {
+							nodesToFollow.push(nextStep);
+						}
+					}
+				}
+				let nextStep: expandNode | undefined;
+				//now check if there are any string nodes which could fit here
+				while (nextStep = nodesToExpandFrom.pop()) {
+					if (nextStep.node.stringOrderedChildren.size) {
+						//explore nodes
+						for (let child of nextStep.node.stringOrderedChildren) {
+							nodesToExpandFrom.push({ node: child[1], pattern: nextStep.pattern + child[0] });
+						}
+					}
+					else {
+						completions.push(nextStep.pattern);
+						if (completions.length >= 5) break;
+					}
+				}
+			}
+		}
+
+		//we tested all possibilities without matching a pattern
+		return completions;
 	}
 }
 //run server.ts

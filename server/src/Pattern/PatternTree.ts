@@ -145,6 +145,23 @@ export class PatternTree {
 		}
 	}
 
+	separateNodeChildren(oldChildren: Map<string, PatternTreeNode>, newChildren: Map<string, PatternTreeNode>) {
+		for (const [key, child] of oldChildren) {
+			newChildren.set(key, child);
+			child.parentGroups.push(newChildren);
+		}
+	}
+
+	/**clones the merged node onto the new node and assigns the new node as parent to the cloned child references */
+	separateNode(mergedNode: PatternTreeNode, newNode: PatternTreeNode) {
+		this.separateNodeChildren(mergedNode.stringOrderedChildren, newNode.stringOrderedChildren);
+		this.separateNodeChildren(mergedNode.instanceTypeChildren, newNode.instanceTypeChildren);
+		this.separateNodeChildren(mergedNode.staticTypeChildren, newNode.staticTypeChildren);
+		this.separateNodeChildren(mergedNode.regExpOrderedChildren, newNode.regExpOrderedChildren);
+		newNode.patternsEndedHere = [...mergedNode.patternsEndedHere];
+	}
+
+
 	//returns endnodes of the pattern parts
 	//for example, this pattern has two endnodes:
 	//send [the | % to the] player
@@ -185,12 +202,62 @@ export class PatternTree {
 			}
 			else {
 				newNodes = [];
-				let treeElem = undefined;
+
+				interface MergedNodeData {
+					/**the parent groups which referenced this node */
+					newParentGroups: Map<string, PatternTreeNode>[];
+					/**the key used to access the node in the parent groups. only one key, because the node always has the same key*/
+					patternKey: string;
+					/**newly created node, ready to use when necessary. */
+					newNode: PatternTreeNode;
+				};
+
+				/** store the data of each merged node, in case conflicts arise, for example when the newly merged node doesn't have the same parents*/
+
+				let dataByMergedNode: Map<PatternTreeNode, MergedNodeData> = new Map<PatternTreeNode, MergedNodeData>();
+
+				/**only merge new nodes. */
+				let mergedNode: PatternTreeNode | undefined = undefined;
 				//for each possibility of this pattern, loop over the letters
 				for (let splitNodeIndex = 0; splitNodeIndex < currentNodes.length; splitNodeIndex++) {
 					const currentSplitNode = currentNodes[splitNodeIndex] as StringNode;
-					if ((char == ' ') && ((currentSplitNode.patternKey == ' ') || currentSplitNode == this.root)) {
-						//no double spaces or spaces at the start of the pattern
+
+					/**checks if a node is present with this key. if not, and there's no merged node available, it creates a new node. */
+					const addNode = (children: Map<string, PatternTreeNode>, key: string, nodeFunc: () => PatternTreeNode) => {
+						/**the node already present with the correct key */
+						const existingNode = children.get(key);
+						if (existingNode == undefined) {
+							//create a new node. we'll only create one new node, since everything that comes after this will connect.
+							if (mergedNode == undefined) {
+								mergedNode = nodeFunc();
+								newNodes.push(mergedNode);
+							}
+							children.set(key, mergedNode);
+							//add the current split node to the parents so:
+							// when we use this node in another pattern, we can check if we're using the same parents.
+							// and we can reorganize nodes later.
+							mergedNode.parentGroups.push(children);
+						}
+						else {
+							//use the existing node. when it has different parents than the new ones, a clone will be created
+							let nodeData = dataByMergedNode.get(existingNode);
+							if (!nodeData) {
+								/**we can't pass the function, because it will be called later with a different context */
+								nodeData = { newParentGroups: [], patternKey: key, newNode: nodeFunc() };
+								dataByMergedNode.set(existingNode, nodeData);
+								/**only add to newNodes if the node wasn't added yet */
+								newNodes.push(existingNode);
+							}
+							nodeData.newParentGroups.push(children);
+						}
+					};
+
+					//no double spaces
+					if ((char == ' ') && ((currentSplitNode.patternKey == ' ')
+						// or spaces at the start of the pattern
+						//(we're not comparing index because then optional elements would possibly add spaces)
+						|| currentSplitNode == this.root)) {
+						//skip
 						newNodes.push(currentSplitNode);
 					}
 					else if (char == '%') {
@@ -213,41 +280,48 @@ export class PatternTree {
 							for (const possibleType of typeState.possibleTypes) {
 								//for debugger
 								if (possibleType.section) {
-									//adds a typenode to the list of typenodes
-									let addTypeNode = (addTo: Map<string, PatternTreeNode>) => {
-
-										let node = addTo.get(possibleType.skriptPatternString);
-										if (!node) {
-											addTo.set(possibleType.skriptPatternString, node = new TypeNode(possibleType.section as SkriptTypeSection));
-										}
-										newNodes.push(node);
-									}
 
 									//literal
 									if (!typeState.staticOnly)
-										addTypeNode(currentSplitNode.instanceTypeChildren);
-									addTypeNode(currentSplitNode.staticTypeChildren);
+										addNode(currentSplitNode.instanceTypeChildren, possibleType.skriptPatternString, () => new TypeNode(possibleType.section as SkriptTypeSection));
+									addNode(currentSplitNode.staticTypeChildren, possibleType.skriptPatternString, () => new TypeNode(possibleType.section as SkriptTypeSection));
 								}
 							}
 						}
 					}
+					//string node
 					else {
 						if (char == '\\') char = pattern[i + 1];
-						const currentTreeElem = currentSplitNode.stringOrderedChildren.get(char);
-						if (currentTreeElem == undefined) {
-							if (treeElem == undefined) {
-								treeElem = new StringNode(char);
-								newNodes.push(treeElem);
+						addNode(currentSplitNode.stringOrderedChildren, char, () => new StringNode(char));
+					}
+				}
+				//fix up the clutter
+				//check if there are any nodes which have different parent nodes
+				for (const [mergedNode, mergedNodeData] of dataByMergedNode) {
+					const oldParentGroups = mergedNode.parentGroups;
+					const newParentGroups = mergedNodeData.newParentGroups;
+					// check if the nodes have the same parents. when they don't, they get split into 2 groups:
+
+					let separatedNode = undefined;
+					// the non-overlapping nodes get merged into one group. the new non overlapping nodes got taken care of already.
+					// the overlapping nodes will not be edited except that some of their parent groups will get removed.
+					for (let oldParentGroup of oldParentGroups) {
+						//old parent might not be in the new parents
+						//all new parents are in the old parents, because that's how they got these child nodes, from their old parents.
+						if (!newParentGroups.includes(oldParentGroup)) {
+							if (!separatedNode) {
+								separatedNode = mergedNodeData.newNode;
+								newNodes.push(separatedNode);
+								//clone the node and keep all children
+								this.separateNode(mergedNode, separatedNode);
 							}
-							currentSplitNode.stringOrderedChildren.set(char, treeElem);
-						}
-						else {
-							newNodes.push(currentTreeElem);
+							//replace the shared node with the new node
+							oldParentGroup.set(mergedNodeData.patternKey, separatedNode);
+							separatedNode.parentGroups.push(oldParentGroup);
+							oldParentGroups.splice(oldParentGroups.indexOf(oldParentGroup));
 						}
 					}
 				}
-				if (char == '\\') i++;
-
 			}
 			if (newNodes) {
 				currentNodes = removeDuplicates(newNodes);
@@ -267,7 +341,7 @@ export class PatternTree {
 			if (PatternTree.isRegexPattern(pattern)) {
 				let node = new RegExpNode(new RegExp(pattern.regexPatternString));
 				node.patternsEndedHere.push(pattern);
-				this.root.regExpOrderedChildren.push(node);
+				this.root.regExpOrderedChildren.set(pattern.regexPatternString, node);
 			}
 			else {
 				const regExpHierarchy = createRegExpHierarchy(pattern.regexPatternString);

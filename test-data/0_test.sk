@@ -1,3 +1,7 @@
+on click:
+	
+on click:
+
 effect:
 	patterns:
 		teststatic %*object%
@@ -6,11 +10,6 @@ command /backpack:
 	aliases: bp
 	trigger:
 		teststatic number
-
-		
-		
-
-		loop all players:
 		add 1 to {_c}
 		set {_c} to 0
 		set {_cc} to 1
@@ -19,6 +18,8 @@ command /backpack:
 			set slot {_c} of event-player's current inventory to {%script%::Global::%event-player's uuid%::%{_cc}%}
 			add 1 to {_c}
 			add 1 to {_cc}
+		set {_c} to 1
+		
 			
 on inventory close:
 	send "%event-player%"
@@ -28,6 +29,7 @@ on inventory close:
 		loop 54 times:
 			add slot {_c} of event-player's current inventory to {%script%::Global::%event-player's uuid%::*}
 			add 1 to {_c}
+			add 1 to torchflower seeds
 			
 function find2BlockGap(xcoord: number,zcoord: number):: location:
 	return {_xcoord}
@@ -65,7 +67,7 @@ on join:
 	wait 1 tick
 	1 tick
 	wait 1 tick
-	wait {_test}
+	wait {_test} 
 	
 function shop(arg1:string):
 	uuid of {_test}
@@ -79,13 +81,14 @@ on rightclick:
 	wait testtype.testfunc() tick
 	shop("")
 	test(2)
-	
+	send messagecommand with named ""
 on rightclick:
 	loop all players:
 		if distance between the player and loop-player is smaller than 5:
 			apply blindness 5 to loop-player for 5 seconds
 			
 on rightclick:
+	set {_test} to {_}
 
 	if players item is "&lAtmos Sword":
 on right click holding lead:
@@ -95,6 +98,7 @@ on right click holding lead:
 		target entity is set
 		owner of target entity is player
 		cancel event
+		
 		if name of target entity is not set:
 			set lore of player's tool to "&eCaptured: %target entity's type% (%target entity's type%)"
 		else:

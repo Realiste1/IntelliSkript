@@ -29,7 +29,6 @@ export class SkriptContext {
 
 
 	//variables which can change in push()
-	parent: SkriptContext | undefined = undefined;
 	currentString = "";
 	currentPosition = 0;
 	currentLine = 0;

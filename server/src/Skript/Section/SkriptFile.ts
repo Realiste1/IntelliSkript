@@ -30,6 +30,7 @@ import { ReflectSectionSection } from './reflect/ReflectSectionSection';
 import { SkriptAliasesSection } from './SkriptAliasesSection';
 import { SkriptVariablesSection } from './SkriptVariablesSection';
 import { currentServer } from '../../server'
+import { LineTerminatorRegExp } from '../../IntelliSkriptConstants';
 
 
 export class SkriptFile extends SkriptSection {
@@ -447,5 +448,13 @@ export class SkriptFile extends SkriptSection {
 
 		}
 		return edits;
+	}
+	getLine(lineIndex: number): string {
+		const lineStart = this.document.offsetAt({ line: lineIndex, character: 0 });
+		LineTerminatorRegExp.lastIndex = lineStart;
+
+		const lineEnd = this.text.match(LineTerminatorRegExp)?.index ?? this.text.length;
+		LineTerminatorRegExp.lastIndex = 0;
+		return this.text.substring(lineStart, lineEnd);
 	}
 }

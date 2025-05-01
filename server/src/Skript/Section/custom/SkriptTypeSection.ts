@@ -65,13 +65,13 @@ export class SkriptTypeSection extends ReflectPatternContainerSection {
             return false;
         }
     }
-    testBaseClasses(testFunction: (testKey: string) => boolean, testedTypes: Set<string> = new Set<string>()): boolean {
+    testBaseClasses(testFunction: (testKey: string) => void, testedTypes: Set<string> = new Set<string>()): boolean {
         if (!testedTypes.has(this.patterns[0]?.skriptPatternString)) {
-            if (testFunction(this.getKey())) return true;
+            testFunction(this.getKey());
             testedTypes.add(this.patterns[0]?.skriptPatternString);
 
             for (const baseClass of this.baseClasses) {
-                if (baseClass.testBaseClasses(testFunction, testedTypes)) return true;
+                baseClass.testBaseClasses(testFunction, testedTypes);
             }
         }
         return false;
