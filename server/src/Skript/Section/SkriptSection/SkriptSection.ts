@@ -298,7 +298,7 @@ export class SkriptSection extends SkriptSectionGroup {
 									if (unKnownData) returnTypeData.possibleTypes.push(unKnownData);
 								}
 								else {
-									let matchingFunction = this.getPatternTree()?.getMatchingFunction(functionName);
+									let matchingFunction = this.getScope()?.getMatchingFunction(functionName);
 									if (!matchingFunction)
 										//couldn't find a function with this name. let's just pass it 'raw'.
 										continue;

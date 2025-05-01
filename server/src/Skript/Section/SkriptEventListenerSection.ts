@@ -1,20 +1,20 @@
 import { PatternData } from "../../pattern/data/PatternData";
-import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';
+import { Scope } from '../../pattern/Scope';
 import { SkriptContext } from '../validation/SkriptContext';
 import { ReflectEventSection } from './reflect/ReflectEventSection';
 import { SkriptSection } from './skriptSection/SkriptSection';
 
 export class SkriptEventListenerSection extends SkriptSection {
-	patternContainer: PatternTreeContainer;
+	scope: Scope;
 	eventPattern: PatternData;
 	constructor(context: SkriptContext, eventPattern: PatternData) {
 		super(context.currentSkriptFile, context);
 		this.eventPattern = eventPattern;
-		this.patternContainer = new PatternTreeContainer(context.currentSkriptFile.patternContainer);
+		this.scope = new Scope(context.currentSkriptFile.scope);
 		const s = this.eventPattern.section as ReflectEventSection;
 		if (s.eventValues)
 			for (let i = 0; i < s.eventValues.length; i++) {
-				this.patternContainer.addPattern(s.eventValues[i]);
+				this.scope.addPattern(s.eventValues[i]);
 			}
 	}
 }

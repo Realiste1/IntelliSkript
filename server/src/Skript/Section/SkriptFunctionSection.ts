@@ -67,7 +67,7 @@ export class SkriptFunction extends SkriptSection {
 				if (returnType) returnTypes.push(returnType);
 			}
 			regexPattern += '\\)';
-			this.parent?.patternContainer?.functions.set(this.name, this);
+			this.parent?.scope?.functions.set(this.name, this);
 			this.pattern = new PatternData(regexPattern, regexPattern, context.getLocation(), returnTypes.length ? PatternType.expression : PatternType.effect, undefined, argumentTypes, argumentPositions, new SkriptTypeState(...returnTypes));
 		}
 	}

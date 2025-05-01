@@ -1,7 +1,7 @@
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { PatternData } from '../../../pattern/data/PatternData';
 import { PatternTree } from '../../../pattern/PatternTree';
-import { PatternTreeContainer } from '../../../pattern/PatternTreeContainer';
+import { Scope } from '../../../pattern/Scope';
 import { PatternType } from "../../../pattern/PatternType";
 import { TokenTypes } from '../../../TokenTypes';
 import { SkriptTypeState } from '../../storage/type/SkriptTypeState';
@@ -14,7 +14,7 @@ import { ReflectPatternSection } from './ReflectPatternSection';
 const patternRegEx = /pattern(|s)/;
 export class ReflectPatternContainerSection extends SkriptSection {
 	static patternType = PatternType.expression;
-	patternContainer: PatternTreeContainer;
+	scope: Scope;
 	returnType: SkriptTypeState = new SkriptTypeState();
 	patterns: PatternData[] = [];
 	/**
@@ -32,7 +32,7 @@ export class ReflectPatternContainerSection extends SkriptSection {
 					const argumentPosition = pattern.argumentPositions[counter];
 					//increase before converting to text, so the first argument will be 'expr-1'
 					counter++;
-					this.patternContainer.addPattern(new PatternData("expr-" + counter, "expr-" + counter, argumentPosition, PatternType.expression, this, [], [], argumentType));
+					this.scope.addPattern(new PatternData("expr-" + counter, "expr-" + counter, argumentPosition, PatternType.expression, this, [], [], argumentType));
 				}
 			}
 		}
@@ -67,8 +67,8 @@ export class ReflectPatternContainerSection extends SkriptSection {
 			context.addDiagnostic(0, context.currentString.length, 'expected patterns here', DiagnosticSeverity.Error);
 		}
 	}
-	override getPatternTree(): PatternTreeContainer | undefined {
-		return this.patternContainer;
+	override getScope(): Scope | undefined {
+		return this.scope;
 	}
 	override finish(context: SkriptContext) {
 		for (const pattern of this.patterns)
@@ -78,6 +78,6 @@ export class ReflectPatternContainerSection extends SkriptSection {
 	}
 	constructor(parent: SkriptSectionGroup, context?: SkriptContext) {
 		super(parent, context);
-		this.patternContainer = new PatternTreeContainer(parent.getPatternTree());
+		this.scope = new Scope(parent.getScope());
 	}
 }

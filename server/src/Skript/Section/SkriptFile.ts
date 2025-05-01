@@ -2,7 +2,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DiagnosticSeverity, Range, TextEdit } from 'vscode-languageserver/browser';
 import { URI } from 'vscode-uri';
 import { PatternData } from '../../pattern/data/PatternData';
-import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';
+import { Scope } from '../../pattern/Scope';
 import { PatternType } from "../../pattern/PatternType";
 import { SkriptPatternMatchHierarchy } from '../../pattern/SkriptPatternMatchHierarchy';
 import { TokenTypes } from '../../TokenTypes';
@@ -44,7 +44,7 @@ export class SkriptFile extends SkriptSection {
 	options: SkriptOption[] = [];
 	parseResult: ParseResult = new ParseResult();
 
-	patternContainer: PatternTreeContainer;
+	scope: Scope;
 	matches: SkriptPatternMatchHierarchy = new SkriptPatternMatchHierarchy();
 	//dependents: SkriptFile[] = new Array<SkriptFile>();
 	//dependencies: SkriptFile[] = new Array<SkriptFile>();
@@ -84,7 +84,7 @@ export class SkriptFile extends SkriptSection {
 	}
 
 	addPattern(pattern: PatternData): void {
-		this.patternContainer.addPattern(pattern);
+		this.scope.addPattern(pattern);
 	}
 
 	createSection(context: SkriptContext): SkriptSection | undefined {
@@ -216,7 +216,7 @@ export class SkriptFile extends SkriptSection {
 	}
 	async validate() {
 		//clear old data
-		this.patternContainer = new PatternTreeContainer(this.parent.getPatternTree());
+		this.scope = new Scope(this.parent.getScope());
 		this.matches = new SkriptPatternMatchHierarchy();
 		//create reference to builder
 		this.parseResult = new ParseResult(this.builder);
@@ -418,7 +418,7 @@ export class SkriptFile extends SkriptSection {
 		this.text = document.getText();
 		this.builder = new UnOrderedSemanticTokensBuilder(this.document);
 		this.parent = parent;
-		this.patternContainer = new PatternTreeContainer(parent.getPatternTree());
+		this.scope = new Scope(parent.getScope());
 		this.uri = URI.parse(document.uri);
 	}
 	toString(): string {

@@ -1,5 +1,5 @@
 import { PatternData } from '../../pattern/data/PatternData';
-import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';
+import { Scope } from '../../pattern/Scope';
 import { PatternType } from '../../pattern/PatternType';
 import { SkriptTypeState } from '../storage/type/SkriptTypeState';
 import { SkriptContext } from '../validation/SkriptContext';
@@ -16,8 +16,8 @@ export class SkriptLoopSection extends SkriptSection {
 			const unknownData = this.getTypeData('unknown');
 			result = unknownData ? new SkriptTypeState(unknownData) : new SkriptTypeState();
 		}
-		this.patternContainer = new PatternTreeContainer(parent.getPatternTree());
-		this.patternContainer.addPattern(new PatternData("[the] loop-value", "(the )?loop-value", context.getLocation(), PatternType.expression, undefined, [], [], result));
+		this.scope = new Scope(parent.getScope());
+		this.scope.addPattern(new PatternData("[the] loop-value", "(the )?loop-value", context.getLocation(), PatternType.expression, undefined, [], [], result));
 	}
 
 }

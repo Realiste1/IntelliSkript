@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri';
 import { addToUri, getRelativePathPart, URISeparator } from '../../file_system/fileFunctions';
-import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';
+import { Scope } from '../../pattern/Scope';
 import { sortedIndex } from '../../SortedArray';
 import { SkriptFile } from '../section/SkriptFile';
 import { SkriptFolderContainer } from './SkriptFolderContainer';
@@ -12,7 +12,7 @@ export class SkriptFolder extends SkriptFolderContainer {
 	files: SkriptFile[] = [];
 	override parent: SkriptFolderContainer;
 
-	patternContainer: PatternTreeContainer;
+	scope: Scope;
 	getPreferredSkriptFileIndexByUri(uri: URI): number {
 		return sortedIndex(this.files, uri, (a, b) => a.document.uri < b.toString());
 	}
@@ -46,15 +46,15 @@ export class SkriptFolder extends SkriptFolderContainer {
 		//when a file invalidates, all files after it invalidate too.
 		if (this.files.length == 0 || !this.files[this.files.length - 1].validated) {
 			const isAddonFolder = this.parent instanceof SkriptWorkSpace && this.parent.addonFolder === this;
-			this.patternContainer = new PatternTreeContainer(
+			this.scope = new Scope(
 				isAddonFolder ?
 					undefined :
-					this.parent.getPatternTree());
+					this.parent.getScope());
 			for (const file of this.files) {
 				//this way, a file won't know what is previous to it
 				if (!file.validated)
 					await file.validate();
-				this.patternContainer.merge(file.patternContainer);
+				this.scope.merge(file.scope);
 
 				if (file === endFile) //we don't need patterns after this
 					return;
@@ -67,9 +67,9 @@ export class SkriptFolder extends SkriptFolderContainer {
 		super();
 		this.parent = parent;
 		this.uri = uri;
-		this.patternContainer = new PatternTreeContainer(parent.getPatternTree());
+		this.scope = new Scope(parent.getScope());
 	}
-	override getPatternTree = () => this.patternContainer;
+	override getScope = () => this.scope;
 
 	createFoldersForUri(uri: URI): SkriptFolder {
 		console.log('creating folder for uri: ' + uri.toString() + ' , folder uri:' + this.uri.toString())

@@ -1,8 +1,8 @@
-import { PatternData, TypeData } from "../pattern/data/PatternData";
-import { PatternMatcher } from '../pattern/PatternMatcher';
-import { PatternTree } from '../pattern/PatternTree';
-import { canBeSubPattern, canHaveSubPattern, PatternType, SubstitutablePatterns } from '../pattern/PatternType';
-import { SkriptPatternCall } from '../pattern/SkriptPattern';
+import { PatternData, TypeData } from "./data/PatternData";
+import { PatternMatcher } from './PatternMatcher';
+import { PatternTree } from './PatternTree';
+import { canBeSubPattern, canHaveSubPattern, PatternType, SubstitutablePatterns } from './PatternType';
+import { SkriptPatternCall } from './SkriptPattern';
 import { SkriptTypeSection } from '../skript/section/custom/SkriptTypeSection';
 import { SkriptFunction } from "../skript/section/SkriptFunctionSection";
 import { SkriptTypeState } from '../skript/storage/type/SkriptTypeState';
@@ -11,15 +11,17 @@ import { MatchResult } from './match/matchResult';
 import { PatternMatch } from './match/PatternMatch';
 import { PatternTreeNode } from './patternTreeNode/PatternTreeNode';
 import { RegExpNode } from "./patternTreeNode/RegExpNode";
-import { TypeNode } from './patternTreeNode/TypeNode';
 
-export class PatternTreeContainer implements PatternMatcher {
+/**a scope contains important things like pattern trees.
+ * it can save local and global things, depending on the scope.
+ */
+export class Scope implements PatternMatcher {
 	/** a list of expression trees, this is to save time (to not recursively have to get patterns from parents or something). we will start at the top and end at this container.
 	*/
-	containersToTraverse: PatternTreeContainer[] = [];
+	containersToTraverse: Scope[] = [];
 	trees = new Array<PatternTree>(PatternType.count);
 	functions = new Map<string, SkriptFunction>();
-	constructor(parent?: PatternTreeContainer) {
+	constructor(parent?: Scope) {
 		for (let i = 0; i < PatternType.count; i++) {
 			this.trees[i] = new PatternTree();
 		}
@@ -313,7 +315,7 @@ export class PatternTreeContainer implements PatternMatcher {
 	}
 
 	//add patterns and functions of other container to this container
-	merge(other: PatternTreeContainer): void {
+	merge(other: Scope): void {
 		for (let i = 0; i < PatternType.count; i++) {
 			this.trees[i].merge(other.trees[i]);
 		}

@@ -769,7 +769,7 @@ export class Server {
 		const completions: string[] = [];
 		//check if there are any possible patterns
 		//calculate patterns
-		const sectionContainer = section.getPatternTree();
+		const sectionContainer = section.getScope();
 		if (sectionContainer) {
 			for (const container of sectionContainer.containersToTraverse) {
 				const typeToCheck = PatternType.effect;

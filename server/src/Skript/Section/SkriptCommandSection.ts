@@ -1,5 +1,5 @@
 import { PatternData } from "../../pattern/data/PatternData";
-import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';
+import { Scope } from '../../pattern/Scope';
 import { PatternType } from "../../pattern/PatternType";
 import { SkriptPatternCall } from "../../pattern/SkriptPattern";
 import { TokenTypes } from '../../TokenTypes';
@@ -9,18 +9,18 @@ import { SkriptSection } from "./skriptSection/SkriptSection";
 
 const sectionRegExp = /(aliases|executable by|prefix|usage|description|permission(?: message|)|cooldown(?: (?:message|bypass|storage))?)/;
 export class SkriptCommandSection extends SkriptSection {
-	patternContainer: PatternTreeContainer;
+	scope: Scope;
 	name = "";
 	//context.currentString should be 'command /test <string> :: string' for example
 	constructor(parent: SkriptSection, context: SkriptContext) {
 		super(parent, context);
-		this.patternContainer = new PatternTreeContainer(parent.getPatternTree());
+		this.scope = new Scope(parent.getScope());
 
 		//get the "player" type, not the entity literal
 		const playerType = super.getTypeData("player");
 		const commandSenderData = this.getPatternData(new SkriptPatternCall("command sender", PatternType.expression))?.fullMatch.matchedPattern;
 		if (playerType && commandSenderData)
-			this.patternContainer.addPattern(new PatternData("[the] player", "(the )?player", commandSenderData.definitionLocation, PatternType.expression, undefined, [], [], new SkriptTypeState(playerType)));
+			this.scope.addPattern(new PatternData("[the] player", "(the )?player", commandSenderData.definitionLocation, PatternType.expression, undefined, [], [], new SkriptTypeState(playerType)));
 
 		//valid commands:
 		// /?
@@ -39,7 +39,7 @@ export class SkriptCommandSection extends SkriptSection {
 			context.addToken(TokenTypes.pattern, previousIndex, typeStart - previousIndex);
 			//parse types
 			const parsedTypes = this.parseTypes(context, typeStart, m[1].length);
-			this.patternContainer.addPattern(new PatternData("arg[ument]( |-)" + argumentIndex, "arg(ument)?( |-)" + argumentIndex, context.getLocation(typeStart, m[1].length), PatternType.expression, undefined, [], [], parsedTypes))
+			this.scope.addPattern(new PatternData("arg[ument]( |-)" + argumentIndex, "arg(ument)?( |-)" + argumentIndex, context.getLocation(typeStart, m[1].length), PatternType.expression, undefined, [], [], parsedTypes))
 			previousIndex = typeEnd;
 			argumentIndex++;
 		}

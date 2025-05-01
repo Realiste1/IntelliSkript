@@ -1,6 +1,6 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
-import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';
+import { Scope } from '../../pattern/Scope';
 import Mutex from '../../Thread';
 import { SkriptFile } from '../section/SkriptFile';
 import { SkriptFolder } from './SkriptFolder';
@@ -115,13 +115,13 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 			}
 		}
 	}
-	override getPatternTree(): PatternTreeContainer | undefined {
+	override getScope(): Scope | undefined {
 		//get patterndata from the skript extension folder
 		//don't call the getPatternData from the folder, because that will call this workspace again
 		//todo:
 		//we're checking twice for the addon folder patterns when compiling the addon folder
 		//it isn't that bad, because all files in the addon folder should be able to find their patterns
-		return this.addonFolder?.patternContainer;
+		return this.addonFolder?.scope;
 	}
 
 	//override getVariableByName(name: string): SkriptVariable | undefined {

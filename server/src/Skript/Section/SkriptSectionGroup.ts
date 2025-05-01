@@ -1,11 +1,11 @@
 import { Hierarchy } from '../../Hierarchy';
 import { PatternMatcher } from '../../pattern/PatternMatcher';
-import { PatternTreeContainer } from '../../pattern/PatternTreeContainer';
+import { Scope } from '../../pattern/Scope';
 import { SkriptPatternCall } from '../../pattern/SkriptPattern';
 import { SkriptVariable } from '../storage/SkriptVariable';
 
 export class SkriptSectionGroup extends Hierarchy<SkriptSectionGroup> implements PatternMatcher {
-	patternContainer?: PatternTreeContainer;
+	scope?: Scope;
 	definedVariables: Array<SkriptVariable> = [];
 	override children: SkriptSectionGroup[] = [];
 	constructor(parent?: SkriptSectionGroup) {
@@ -21,11 +21,11 @@ export class SkriptSectionGroup extends Hierarchy<SkriptSectionGroup> implements
 	/**
 	 * returns the pattern tree of this pattern matcher, which should be set as the parent of any pattern tree of children.
 	 */
-	getPatternTree(): PatternTreeContainer | undefined {
-		return this.patternContainer ?? this.parent?.getPatternTree();
+	getScope(): Scope | undefined {
+		return this.scope ?? this.parent?.getScope();
 	}
 
 	getPatternData(testPattern: SkriptPatternCall) {
-		return this.getPatternTree()?.getPatternData(testPattern);
+		return this.getScope()?.getPatternData(testPattern);
 	};
 }
