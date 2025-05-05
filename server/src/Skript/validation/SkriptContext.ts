@@ -20,9 +20,6 @@ export class SkriptContext {
 	//public set currentSection(newValue: SkriptSection | undefined) { this.referenceFields.currentSection = newValue; }
 	currentSection: SkriptSection;
 
-	//determine if the current context has any errors
-	hasErrors = false;
-
 	//reference variables
 	currentSkriptFile: SkriptFile;
 	currentDocument: TextDocument;
@@ -83,9 +80,6 @@ export class SkriptContext {
 	}
 
 	addDiagnosticAbsolute(absoluteRange: Range, message: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error, code?: string, data: unknown = undefined) {
-		if (severity == DiagnosticSeverity.Error) {
-			this.hasErrors = true;
-		}
 		const diagnostic: Diagnostic = {
 			severity: severity,
 			range: absoluteRange,

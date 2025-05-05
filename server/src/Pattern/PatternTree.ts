@@ -487,7 +487,7 @@ export class PatternTree {
 
 	static parsePattern(context: SkriptContext, patternSection: ReflectPatternContainerSection, type: PatternType): PatternData | undefined {
 		const Hierarchy = this.createHierarchy(context);
-		if (!context.hasErrors) {
+		if (!context.parseResult.diagnostics.length) {
 			let m: RegExpMatchArray | null;
 			const expressionArguments: SkriptTypeState[] = [];
 			let shouldReturn = false;

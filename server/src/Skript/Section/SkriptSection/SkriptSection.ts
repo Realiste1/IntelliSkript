@@ -365,9 +365,11 @@ export class SkriptSection extends SkriptSectionGroup {
 			else {
 				let matchResult = undefined;
 				for (const mainPatternType of mainPatternTypes) {
+					const call = new SkriptPatternCall(pattern.pattern, mainPatternType, currentPatternArguments);
+					context.parseResult.patternsParsed.push([call, currentNode.cloneWithOffset(context.currentPosition)]);
 
 					//pass pattern by reference
-					matchResult = this.getPatternData(new SkriptPatternCall(pattern.pattern, mainPatternType, currentPatternArguments));// context, mainPatternType, pattern, currentPatternArguments);
+					matchResult = this.getPatternData(call);// context, mainPatternType, pattern, currentPatternArguments);
 
 					if (matchResult) {
 						foundPattern = matchResult.fullMatch.matchedPattern;

@@ -8,7 +8,7 @@ import { SkriptTypeState } from '../../storage/type/SkriptTypeState';
 
 export class ReflectPropertySection extends ReflectExpressionSection {
 	propertyParentType: TypeData;
-	constructor(parent: SkriptSection, context: SkriptContext, propertyParentType: TypeData, ) {
+	constructor(parent: SkriptSection, context: SkriptContext, propertyParentType: TypeData,) {
 		super(parent, context);
 		this.propertyParentType = propertyParentType;
 	}
@@ -22,8 +22,7 @@ export class ReflectPropertySection extends ReflectExpressionSection {
 			const p1 = new PatternData("%'s " + p.skriptPatternString, "%'s " + p.regexPatternString, p.definitionLocation, PatternType.expression, this, [typeState, ...p.expressionArguments]);
 			const p2 = new PatternData(p.skriptPatternString + " of %", p.regexPatternString + " of %", p.definitionLocation, PatternType.expression, this, [...p.expressionArguments, typeState]);
 
-			context.currentSkriptFile.addPattern(p1);
-			context.currentSkriptFile.addPattern(p2);
+			context.parseResult.newPatterns.push([this, p1], [this, p2]);
 		}
 	}
 }

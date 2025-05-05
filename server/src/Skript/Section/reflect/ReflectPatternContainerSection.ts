@@ -25,6 +25,7 @@ export class ReflectPatternContainerSection extends SkriptSection {
 	parsePattern(context: SkriptContext): PatternData | undefined {
 		const pattern = PatternTree.parsePattern(context, this, (<typeof ReflectPatternContainerSection>this.constructor).patternType);
 		if (pattern) {
+			//we can still check if this.patterns.length == 0, because on the next line, the newpatterns from the parse result will be added to this.patterns
 			pattern.returnType = this.returnType;
 			if (this.patterns.length == 0) {
 				let counter = 0;
@@ -32,7 +33,7 @@ export class ReflectPatternContainerSection extends SkriptSection {
 					const argumentPosition = pattern.argumentPositions[counter];
 					//increase before converting to text, so the first argument will be 'expr-1'
 					counter++;
-					this.scope.addPattern(new PatternData("expr-" + counter, "expr-" + counter, argumentPosition, PatternType.expression, this, [], [], argumentType));
+					context.parseResult.newPatterns.push([this, new PatternData("expr-" + counter, "expr-" + counter, argumentPosition, PatternType.expression, this, [], [], argumentType)]);
 				}
 			}
 		}
@@ -41,7 +42,7 @@ export class ReflectPatternContainerSection extends SkriptSection {
 	addPattern(context: SkriptContext): void {
 		const pattern = this.parsePattern(context);
 		if (pattern)
-			this.patterns.push(pattern);
+			context.parseResult.newPatterns.push([context.currentSkriptFile, pattern]);
 	}
 
 	createSection(context: SkriptContext): SkriptSection | undefined {

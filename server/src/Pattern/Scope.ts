@@ -178,21 +178,33 @@ export class Scope implements PatternMatcher {
 			checkEndNode(endNodeData);
 		}
 		if (progress.index < pattern.length) {
-			//no match stopped at this position
-			//the pattern call is shorter than the patterns
-
 			//maybe the current part of the pattern belongs to a submatch?
 			const canSubMatch = progress.index == 0 || isSeparator(progress.index - 1);
 			const hasValidInstanceNodes = canSubMatch && progress.currentNode.instanceTypeChildren.size > 0;
 			const hasValidStaticNodes = canSubMatch && progress.currentNode.staticTypeChildren.size > 0;
 
+			//all possibilities have been tested, but there haven't been any children who fit this pattern. we need to submatch.
+			//we will try finding a pattern from the expression trees which returns an instance of the expected type.
+
+			//infinite recursion happens when the currentnode is root
+			if (this.canSubstitute(progress)) {
+				for (const substitutablePatternType of SubstitutablePatterns) {
+					if (substitutablePatternType == PatternType.type ? hasValidStaticNodes : hasValidInstanceNodes) {
+						for (const container of this.containersToTraverse) {
+							//clone
+							const root = container.trees[substitutablePatternType].compileAndGetRoot();
+							nodesToCheck.push({ ...progress, start: progress.index, parent: { ...cloneProgress(progress) }, currentNode: root, startNode: root, patternType: substitutablePatternType });
+
+						}
+					}
+				}
+			}
+			//no match stopped at this position
+			//the pattern call is shorter than the patterns
+
+
 
 			const currentChar = pattern[progress.index];
-			const charChild = progress.currentNode.stringOrderedChildren.get(currentChar);
-			if (charChild) {
-				//check the normal path (just traversing the tree based on charachters we encounter) first.
-				nodesToCheck.push({ ...cloneProgress(progress), currentNode: charChild, index: progress.index + 1 });
-			}
 			if (progress.currentNode.instanceTypeChildren.size) {
 				let newIndex = progress.index;
 				let newArgumentIndex = progress.argumentIndex;
@@ -212,25 +224,14 @@ export class Scope implements PatternMatcher {
 					this.testTypeNodes(testClass, progress.currentNode.instanceTypeChildren, currentArgument);
 				}
 			}
-			//all possibilities have been tested, but there haven't been any children who fit this pattern. we need to submatch.
-			//we will try finding a pattern from the expression trees which returns an instance of the expected type.
-
-			//infinite recursion happens when the currentnode is root
-			if (this.canSubstitute(progress)) {
-				for (const substitutablePatternType of SubstitutablePatterns) {
-					if (substitutablePatternType == PatternType.type ? hasValidStaticNodes : hasValidInstanceNodes) {
-						for (const container of this.containersToTraverse) {
-							//clone
-							const root = container.trees[substitutablePatternType].compileAndGetRoot();
-							nodesToCheck.push({ ...progress, start: progress.index, parent: { ...cloneProgress(progress) }, currentNode: root, startNode: root, patternType: substitutablePatternType });
-
-						}
-					}
-				}
+			const charChild = progress.currentNode.stringOrderedChildren.get(currentChar);
+			if (charChild) {
+				//check the normal path (just traversing the tree based on charachters we encounter) first.
+				nodesToCheck.push({ ...cloneProgress(progress), currentNode: charChild, index: progress.index + 1 });
 			}
 		}
 		//reverse order, because the last elements will be checked first
-		return nodesToCheck.reverse();
+		return nodesToCheck;
 	}
 
 

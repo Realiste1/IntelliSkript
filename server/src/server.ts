@@ -20,6 +20,7 @@ import { SkriptSection } from './skript/section/skriptSection/SkriptSection';
 import { MatchProgress } from './pattern/match/MatchProgress';
 import { SkriptPatternCall } from './pattern/SkriptPattern';
 import { removeDuplicates } from './pattern/removeDuplicates';
+import { SkriptContext } from './skript/validation/SkriptContext';
 
 
 export class Server {
@@ -565,11 +566,12 @@ export class Server {
 
 		//		// This handler provides the initial list of the completion items.
 		connection.onCompletion(
-			(completionParams: CompletionParams): CompletionItem[] => {
+			async (completionParams: CompletionParams): Promise<CompletionItem[]> => {
 				let results: CompletionItem[] = [];
 				// The pass parameter contains the position of the text document in
 				// which code complete got requested. For the example we ignore this
 				// info and always provide the same completion items.
+				const unlock = await this.currentWorkSpace.mutex.lock();
 				const file = this.currentWorkSpace.getSkriptFileByUri(URI.parse(completionParams.textDocument.uri));
 				if (file) {
 					let result: CompletionItem = { kind: CompletionItemKind.Snippet, insertTextFormat: InsertTextFormat.Snippet, label: 'no label' };
@@ -648,20 +650,31 @@ export class Server {
 							}
 						}
 					}
-					const line = file.getLine(completionParams.position.line);
-					const indentationEndIndex = IndentData.getIndentationEndIndex(line);
+					const editPos = file.document.offsetAt(completionParams.position);
+
 
 					//todo: check if we're not typing behind comments
 
-					const patternToComplete = line.substring(indentationEndIndex, completionParams.position.character);
-					const wordToComplete = patternToComplete.substring(patternToComplete.lastIndexOf(' ') + 1);
-					const section = file.getExactSectionAtLine(completionParams.position.line);
-					const completions = removeDuplicates(this.getPossibleCompletions(section, patternToComplete));
-					for (const completion of completions) {
-						results.push({ textEdit: { range: { start: completionParams.position, end: completionParams.position }, newText: completion }, label: wordToComplete + completion, filterText: '#' })
+					const lineContext = file.getLineContext(completionParams.position.line);
+					const indentData = IndentData.getIndentData(lineContext.currentString);
+					const trimInfo = SkriptFile.trimLineWithoutComments(lineContext.currentString);
+					const trimmedContext = lineContext.push(indentData.endIndex, trimInfo.trimmedLine.length);
+					//get previous section
+					const section = file.getExactSectionAtLine(completionParams.position.line ? completionParams.position.line - 1 : 0);
+					const parsedContext = SkriptFile.validateCodeLine(trimmedContext, section, indentData);
+					for (const [patternCall, node] of parsedContext.parseResult.patternsParsed) {
+						if (node.end == editPos) {
+							const wordToComplete = trimmedContext.currentString.substring(trimmedContext.currentString.lastIndexOf(' ') + 1);
+							const completions = removeDuplicates(this.getPossibleCompletions(section, patternCall));
+							for (const completion of completions) {
+								results.push({ textEdit: { range: { start: completionParams.position, end: completionParams.position }, newText: completion }, label: wordToComplete + completion, filterText: '#' })
+							}
+							break;
+						}
 					}
 
 				}
+				unlock();
 				return results;
 			}
 		);
@@ -765,18 +778,17 @@ export class Server {
 			variable: undefined
 		};
 	}
-	getPossibleCompletions(section: SkriptSection, patternToComplete: string): string[] {
+	getPossibleCompletions(section: SkriptSection, patternCall: SkriptPatternCall): string[] {
 		const completions: string[] = [];
 		//check if there are any possible patterns
 		//calculate patterns
 		const sectionContainer = section.getScope();
 		if (sectionContainer) {
 			for (const container of sectionContainer.containersToTraverse) {
-				const typeToCheck = PatternType.effect;
-				const tree = container.trees[typeToCheck];
+				const tree = container.trees[patternCall.patternType];
 				const root = tree.compileAndGetRoot();
 				//traverse nodes following the charachters until we reached the end of the pattern in construction. then branch out to see possible pattern types
-				let progress: MatchProgress = { testPattern: new SkriptPatternCall(patternToComplete, typeToCheck), patternType: typeToCheck, start: 0, index: 0, argumentIndex: 0, startNode: root, currentNode: root, subMatches: [] }
+				let progress: MatchProgress = { testPattern: patternCall, patternType: patternCall.patternType, start: 0, index: 0, argumentIndex: 0, startNode: root, currentNode: root, subMatches: [] }
 
 				interface expandNode {
 					node: PatternTreeNode, pattern: string
@@ -793,7 +805,7 @@ export class Server {
 						//as it turns out, the line is correct as it is.
 					}
 					for (const nextStep of nextSteps) {
-						if (nextStep.index >= patternToComplete.length) {
+						if (nextStep.index >= patternCall.pattern.length) {
 							nodesToExpandFrom.push({ node: nextStep.currentNode, pattern: '' });
 						}
 						else {
@@ -805,9 +817,12 @@ export class Server {
 				//now check if there are any string nodes which could fit here
 				while (nextStep = nodesToExpandFrom.pop()) {
 					if (nextStep.node.stringOrderedChildren.size) {
+						if (nextStep.node.patternsEndedHere.length) {
+							completions.push(nextStep.pattern);
+						}
 						//explore nodes
-						for (let child of nextStep.node.stringOrderedChildren) {
-							nodesToExpandFrom.push({ node: child[1], pattern: nextStep.pattern + child[0] });
+						for (let [key, node] of nextStep.node.stringOrderedChildren) {
+							nodesToExpandFrom.push({ node: node, pattern: nextStep.pattern + key });
 						}
 					}
 					else {

@@ -30,7 +30,8 @@ import { ReflectSectionSection } from './reflect/ReflectSectionSection';
 import { SkriptAliasesSection } from './SkriptAliasesSection';
 import { SkriptVariablesSection } from './SkriptVariablesSection';
 import { currentServer } from '../../server'
-import { LineTerminatorRegExp } from '../../IntelliSkriptConstants';
+import { consumingLineTerminatorRegexp, LineTerminatorRegExp } from '../../IntelliSkriptConstants';
+import { ReflectPatternSection } from './reflect/ReflectPatternSection';
 
 
 export class SkriptFile extends SkriptSection {
@@ -46,6 +47,7 @@ export class SkriptFile extends SkriptSection {
 
 	scope: Scope;
 	matches: SkriptPatternMatchHierarchy = new SkriptPatternMatchHierarchy();
+
 	//dependents: SkriptFile[] = new Array<SkriptFile>();
 	//dependencies: SkriptFile[] = new Array<SkriptFile>();
 	validated = false;
@@ -214,6 +216,26 @@ export class SkriptFile extends SkriptSection {
 		const lineWithoutComments = commentIndex == -1 ? line : line.substring(0, commentIndex);
 		return { trimmedLine: lineWithoutComments.trim(), commentIndex: commentIndex };
 	}
+
+
+	static validateCodeLine(context: SkriptContext, section: SkriptSection, indentData: IndentData): SkriptContext {
+		const sectionContext = context.push(0,
+			indentData.hasColon ? context.currentString.length - 1 : undefined);
+		sectionContext.currentSection = section;
+		sectionContext.parseResult = new ParseResult();
+
+		if (indentData.hasColon) {
+			//indent
+			sectionContext.parseResult.newSection = sectionContext.currentSection.createSection(sectionContext);
+		}
+		else {
+			//context.currentString = trimmedLine;
+			sectionContext.currentSection.processLine(sectionContext);
+			//context.currentSection.endLine = context.currentLine;
+		}
+		return sectionContext;
+	}
+
 	async validate() {
 		//clear old data
 		this.scope = new Scope(this.parent.getScope());
@@ -230,7 +252,7 @@ export class SkriptFile extends SkriptSection {
 		/**we need to include the line breaks. to do that, we split using a positive lookbehind.
 		to avoid splitting in two separate delimiters when a document has both \r\n, a negative lookahead is added to check for \n
 		the last line doesn't have \r\n at the end.*/
-		const terminatedLines = this.text.split(/(?<=\r\n|\r(?!\n)|\n)/g);
+		const terminatedLines = this.text.split(LineTerminatorRegExp);
 
 		this.suggestedIndentation = new Array<number>(terminatedLines.length);
 
@@ -299,31 +321,16 @@ export class SkriptFile extends SkriptSection {
 					//removed indentation and comments
 					const trimmedContext = currentLineContext.push(indentData.endIndex, trimmedLine.length);
 
-					let newSection: SkriptSection | undefined;
 					let mostValidContext: SkriptContext | undefined;
 
 					const checkSection = (section: SkriptSection): boolean => {
-						const sectionContext = trimmedContext.push(0,
-							indentData.hasColon ? trimmedContext.currentString.length - 1 : undefined);
-						sectionContext.currentSection = section;
-						sectionContext.parseResult = new ParseResult();
+						const validatedContext = SkriptFile.validateCodeLine(trimmedContext, section, indentData);
+						const parsedCorrectly = validatedContext.parseResult.diagnostics.length == 0;
 						//first we check the expected section, so the most validcontext will be undefined at this point
-						if (!mostValidContext) mostValidContext = sectionContext;
-
-						if (indentData.hasColon) {
-							//indent
-							newSection = sectionContext.currentSection.createSection?.(sectionContext);
-							if (!newSection) return false;
-						}
-						else {
-							//context.currentString = trimmedLine;
-							sectionContext.currentSection?.processLine?.(sectionContext);
-							//trimmedContext.currentSection.endLine = context.currentLine;
-						}
-						if (sectionContext.parseResult.diagnostics.length)
-							return false;
-						mostValidContext = sectionContext;
-						return true;
+						if (!mostValidContext
+							//when this indentation results in correct parsing, we make this the most valid context
+							|| parsedCorrectly) mostValidContext = validatedContext;
+						return parsedCorrectly;
 					}
 
 					let expectedSection = trimmedContext.currentSection;
@@ -382,15 +389,20 @@ export class SkriptFile extends SkriptSection {
 						this.builder.addLine(mostValidContext.parseResult.tokens as SemanticTokenLine)
 						this.parseResult.diagnostics.push(...mostValidContext.parseResult.diagnostics);
 
-
 						//expectedIndentationCount = currentinden
 						if (indentData.hasColon) {
 							//when the no section was able to be created, create a new skriptsection
-							newSection ||= new SkriptSection(mostValidContext.currentSection, mostValidContext);
+							const newSection = mostValidContext.parseResult.newSection ?? new SkriptSection(mostValidContext.currentSection, mostValidContext);
 							context.currentSection?.children.push(newSection);
 							context.currentSection = newSection;
 						}
-
+						//add patterns to section
+						if (context.currentSection instanceof ReflectPatternSection) {
+							const scope = (context.currentSection.parent as ReflectPatternContainerSection).scope;
+							for (const [section, pattern] of mostValidContext.parseResult.newPatterns) {
+								section.scope?.addPattern(pattern);
+							}
+						}
 						lastCodeLine = currentLineIndex;
 						indentData.finishLine();
 					}
@@ -449,12 +461,21 @@ export class SkriptFile extends SkriptSection {
 		}
 		return edits;
 	}
-	getLine(lineIndex: number): string {
-		const lineStart = this.document.offsetAt({ line: lineIndex, character: 0 });
-		LineTerminatorRegExp.lastIndex = lineStart;
+	getLineIndexRange(lineIndex: number): { start: number, end: number } {
+		const startPos = { line: lineIndex, character: 0 };
+		const startOffset = this.document.offsetAt(startPos);
+		consumingLineTerminatorRegexp.lastIndex = startOffset;
+		const match = consumingLineTerminatorRegexp.exec(this.text);
 
-		const lineEnd = this.text.match(LineTerminatorRegExp)?.index ?? this.text.length;
-		LineTerminatorRegExp.lastIndex = 0;
-		return this.text.substring(lineStart, lineEnd);
+		const endOffset = match?.index ?? this.text.length;
+		consumingLineTerminatorRegexp.lastIndex = 0;
+		return { start: startOffset, end: endOffset };
+	}
+	getLineContext(lineIndex: number): SkriptContext {
+		const lineRange = this.getLineIndexRange(lineIndex);
+		const context = new SkriptContext(this, this.text.substring(lineRange.start, lineRange.end));
+		context.currentPosition = lineRange.start;
+		context.currentLine = lineIndex;
+		return context;
 	}
 }
