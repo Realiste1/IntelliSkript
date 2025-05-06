@@ -12,11 +12,47 @@
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
 
 const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
+const { merge } = require('webpack-merge');
 
 /** @type WebpackConfig */
-const nodeClientConfig = {
-	context: path.join(__dirname, 'client'),
+const sharedConfig = {
 	mode: 'none',
+	externals: {
+		vscode: 'commonjs vscode', // ignored because it doesn't exist
+	},
+	devtool: 'nosources-source-map',
+	performance: {
+		hints: false,
+	},
+	resolve: {
+		conditionNames: ['import', 'require'],
+		mainFields: ['browser', 'module', 'main'],
+		extensions: ['.ts', '.js'], // support ts-files and js-files
+		alias: {},
+		fallback: {
+			path: require.resolve('path-browserify'),
+		},
+	},
+	module: {
+		rules: [
+			{
+				test: /\.ts$/,
+				exclude: /node_modules/,
+				use: [
+					{
+						loader: 'ts-loader',
+					},
+				],
+			},
+		],
+	},
+};
+
+/** @type WebpackConfig */
+const nodeClientConfig = merge(sharedConfig, {
+	context: path.join(__dirname, 'client'),
+
 	target: 'node', // web extensions run in a webworker context
 	entry: {
 		nodeClientMain: './src/nodeClientMain.ts',
@@ -29,40 +65,12 @@ const nodeClientConfig = {
 		devtoolModuleFilenameTemplate: info =>
 			"webpack:///" + path.relative(__dirname, info.absoluteResourcePath).replace(/\\/g, "/")
 	},
-	resolve: {
-		mainFields: ['module', 'main'],
-		extensions: ['.ts', '.js'], // support ts-files and js-files
-		alias: {},
-		fallback: {
-			path: require.resolve('path-browserify'),
-		},
-	},
-	module: {
-		rules: [
-			{
-				test: /\.ts$/,
-				exclude: /node_modules/,
-				use: [
-					{
-						loader: 'ts-loader',
-					},
-				],
-			},
-		],
-	},
-	externals: {
-		vscode: 'commonjs vscode', // ignored because it doesn't exist
-	},
-	performance: {
-		hints: false,
-	},
-	devtool: 'nosources-source-map',
-};
+});
 
 /** @type WebpackConfig */
-const nodeServerConfig = {
+const nodeServerConfig = merge(sharedConfig, {
 	context: path.join(__dirname, 'server'),
-	mode: 'none',
+
 	target: 'node', // web extensions run in a webworker context
 	entry: {
 		nodeServerMain: './src/nodeServerMain.ts',
@@ -74,41 +82,12 @@ const nodeServerConfig = {
 		library: 'serverExportVar',
 		devtoolModuleFilenameTemplate: '../[resource-path]'
 	},
-	resolve: {
-		conditionNames: ['import', 'require'],
-		mainFields: ['module', 'main'],
-		extensions: ['.ts', '.js'], // support ts-files and js-files
-		alias: {},
-		fallback: {
-			//path: require.resolve("path-browserify")
-		},
-	},
-	module: {
-		rules: [
-			{
-				test: /\.ts$/,
-				exclude: /node_modules/,
-				use: [
-					{
-						loader: 'ts-loader',
-					},
-				],
-			},
-		],
-	},
-	externals: {
-		vscode: 'commonjs vscode', // ignored because it doesn't exist
-	},
-	performance: {
-		hints: false,
-	},
-	devtool: 'nosources-source-map',
-};
+});
 
 /** @type WebpackConfig */
-const browserClientConfig = {
+const browserClientConfig = merge(sharedConfig, {
 	context: path.join(__dirname, 'client'),
-	mode: 'none',
+
 	target: 'webworker', // web extensions run in a webworker context
 	entry: {
 		browserClientMain: './src/browserClientMain.ts',
@@ -121,41 +100,12 @@ const browserClientConfig = {
 		devtoolModuleFilenameTemplate: info =>
 			"webpack:///" + path.relative(__dirname, info.absoluteResourcePath).replace(/\\/g, "/")
 	},
-	resolve: {
-		conditionNames: ['import', 'require'],
-		mainFields: ['module', 'main'],
-		extensions: ['.ts', '.js'], // support ts-files and js-files
-		alias: {},
-		fallback: {
-			path: require.resolve('path-browserify'),
-		},
-	},
-	module: {
-		rules: [
-			{
-				test: /\.ts$/,
-				exclude: /node_modules/,
-				use: [
-					{
-						loader: 'ts-loader',
-					},
-				],
-			},
-		],
-	},
-	externals: {
-		vscode: 'commonjs vscode', // ignored because it doesn't exist
-	},
-	performance: {
-		hints: false,
-	},
-	devtool: 'nosources-source-map',
-};
+});
 
 /** @type WebpackConfig */
-const browserServerConfig = {
+const browserServerConfig = merge(sharedConfig, {
 	context: path.join(__dirname, 'server'),
-	mode: 'none',
+
 	target: 'webworker', // web extensions run in a webworker context
 	entry: {
 		browserServerMain: './src/browserServerMain.ts',
@@ -167,35 +117,7 @@ const browserServerConfig = {
 		library: 'serverExportVar',
 		devtoolModuleFilenameTemplate: '../[resource-path]'
 	},
-	resolve: {
-		mainFields: ['module', 'main'],
-		extensions: ['.ts', '.js'], // support ts-files and js-files
-		alias: {},
-		fallback: {
-			//path: require.resolve("path-browserify")
-		},
-	},
-	module: {
-		rules: [
-			{
-				test: /\.ts$/,
-				exclude: /node_modules/,
-				use: [
-					{
-						loader: 'ts-loader',
-					},
-				],
-			},
-		],
-	},
-	externals: {
-		vscode: 'commonjs vscode', // ignored because it doesn't exist
-	},
-	performance: {
-		hints: false,
-	},
-	devtool: 'nosources-source-map',
-};
+});
 
 
 

@@ -1,21 +1,20 @@
-import { PatternData, TypeData } from "./data/PatternData";
-import { PatternMatcher } from './PatternMatcher';
-import { PatternTree } from './PatternTree';
-import { canBeSubPattern, canHaveSubPattern, PatternType, SubstitutablePatterns } from './PatternType';
-import { SkriptPatternCall } from './SkriptPattern';
 import { SkriptTypeSection } from '../skript/section/custom/SkriptTypeSection';
 import { SkriptFunction } from "../skript/section/SkriptFunctionSection";
 import { SkriptTypeState } from '../skript/storage/type/SkriptTypeState';
+import { PatternData, TypeData } from "./data/PatternData";
 import { cloneProgress, MatchProgress } from './match/MatchProgress';
 import { MatchResult } from './match/matchResult';
 import { PatternMatch } from './match/PatternMatch';
+import { PatternTree } from './PatternTree';
 import { PatternTreeNode } from './patternTreeNode/PatternTreeNode';
 import { RegExpNode } from "./patternTreeNode/RegExpNode";
+import { canBeSubPattern, canHaveSubPattern, PatternType, SubstitutablePatterns } from './PatternType';
+import { SkriptPatternCall } from './SkriptPattern';
 
 /**a scope contains important things like pattern trees.
  * it can save local and global things, depending on the scope.
  */
-export class Scope implements PatternMatcher {
+export class Scope {
 	/** a list of expression trees, this is to save time (to not recursively have to get patterns from parents or something). we will start at the top and end at this container.
 	*/
 	containersToTraverse: Scope[] = [];
@@ -68,7 +67,7 @@ export class Scope implements PatternMatcher {
 		//when the pattern can be a subpattern and it substitutes to a pattern which can be a subpattern at the same node, infinite recursion can occur
 		//wouldn't work when a pattern starts with a type literal for example
 		return canHaveSubPattern(progress.patternType) &&
-			(!canBeSubPattern(progress.patternType) || (progress.currentNode !== progress.startNode));
+			(!canBeSubPattern(progress.patternType) || (progress.currentNode !== progress.rootNode));
 	}
 
 	/**
@@ -110,7 +109,7 @@ export class Scope implements PatternMatcher {
 					const testTypeChild = (testChild: PatternTreeNode) => {
 						//clone
 						//add child match to parentprogress.submatches
-						nodesToCheck.push({ ...cloneProgress(parentProgress), subMatches: parentProgress.subMatches.concat([childMatch]), currentNode: testChild, startNode: testChild, index: checkIndex, argumentIndex: progress.argumentIndex });
+						nodesToCheck.push({ ...cloneProgress(parentProgress), subMatches: parentProgress.subMatches.concat([childMatch]), currentNode: testChild, rootNode: testChild, index: checkIndex, argumentIndex: progress.argumentIndex });
 					}
 					if (progress.patternType == PatternType.expression) {
 						this.testTypeNodes(testTypeChild, parentProgress.currentNode.instanceTypeChildren, endNodeData.returnType);
@@ -140,7 +139,7 @@ export class Scope implements PatternMatcher {
 							...progress,
 							//the old parent node becomes 'grandparent'
 							parent: progress.parent,
-							startNode: root,
+							rootNode: root,
 							currentNode: root,
 							//the pattern type has to be expression, as that's the only pattern type which can substitute and be a substitute
 							//we don't have to test for type, because type can't substitute.
@@ -157,7 +156,7 @@ export class Scope implements PatternMatcher {
 		}
 
 		//check if this pattern matches a regex pattern
-		if (progress.currentNode == progress.startNode && progress.patternType == PatternType.expression && /[0-9-]/.test(pattern[progress.index])) {
+		if (progress.currentNode == progress.rootNode && progress.patternType == PatternType.expression && /[0-9-]/.test(pattern[progress.index])) {
 			for (let [key, child] of progress.currentNode.regExpOrderedChildren) {
 				let childRegexp = (child as RegExpNode).regExp;
 				//this is a number
@@ -193,8 +192,7 @@ export class Scope implements PatternMatcher {
 						for (const container of this.containersToTraverse) {
 							//clone
 							const root = container.trees[substitutablePatternType].compileAndGetRoot();
-							nodesToCheck.push({ ...progress, start: progress.index, parent: { ...cloneProgress(progress) }, currentNode: root, startNode: root, patternType: substitutablePatternType });
-
+							nodesToCheck.push({ ...progress, start: progress.index, parent: { ...cloneProgress(progress) }, currentNode: root, rootNode: root, patternType: substitutablePatternType });
 						}
 					}
 				}
@@ -210,7 +208,7 @@ export class Scope implements PatternMatcher {
 				let newArgumentIndex = progress.argumentIndex;
 				const testClass = (typeChild: PatternTreeNode): void => {
 					if (typeChild) {
-						nodesToCheck.push({ ...cloneProgress(progress), currentNode: typeChild, startNode: progress.currentNode, index: newIndex, argumentIndex: newArgumentIndex });
+						nodesToCheck.push({ ...cloneProgress(progress), currentNode: typeChild, rootNode: progress.currentNode, index: newIndex, argumentIndex: newArgumentIndex });
 					}
 				}
 
@@ -264,41 +262,52 @@ export class Scope implements PatternMatcher {
 	 * @param parentMatchNode
 	 * @returns
 	 */
-	getMatchingPatternPart(progress: MatchProgress): MatchResult | undefined {
-		let nextStepsToTake = [progress];
-		let currentProgress: MatchProgress | undefined;
+	getMatchingPatternPart(startNodes: MatchProgress[]): MatchResult | undefined {
+		interface richProgress {
+			progress: MatchProgress, nodesPassed: PatternTreeNode[]
+		};
+		let nextStepsToTake: (richProgress | undefined)[] = startNodes.map((node) => { return { progress: node, nodesPassed: [node.currentNode] } });
+		let currentProgress: richProgress | undefined;
 		//the last array elements will be processed first
 		while (currentProgress = nextStepsToTake.pop()) {
-			const nextSteps = this.stepTreeNode(currentProgress);
-			if (currentProgress.result) {
+			const nextSteps = this.stepTreeNode(currentProgress.progress);
+			if (currentProgress.progress.result) {
+				currentProgress.progress.result.nodesPassed = currentProgress.nodesPassed;
 				//TODO: create matchresult
-				return currentProgress.result;
+				return currentProgress.progress.result;
 			}
-			nextStepsToTake.push(...nextSteps);
+
+			nextStepsToTake.push(...nextSteps.map((value) => { return { progress: value, nodesPassed: [...(currentProgress as richProgress).nodesPassed, value.currentNode] } }));
 		}
 		//we tested all possibilities without matching a pattern
 		return undefined;
 	}
 
-	//the tree should be compiled before this method is called
-	getPatternData(testPattern: SkriptPatternCall): MatchResult | undefined {
+	getStartNodes(patternCall: SkriptPatternCall): MatchProgress[] {
+		const startNodes = [];
+
 		//loop all trees we can traverse
 		for (const container of this.containersToTraverse) {
-			const tree = container.trees[testPattern.patternType];
-			const root = tree.compileAndGetRoot();
-			const data = this.getMatchingPatternPart({
-				testPattern: testPattern,
-				start: 0,
-				index: 0,
-				argumentIndex: 0,
-				currentNode: root,
-				startNode: root,
-				patternType: testPattern.patternType,
-				subMatches: []
-			});
-			if (data) return data;
+			for (const patternType of patternCall.patternTypes) {
+				const tree = container.trees[patternType];
+				const root = tree.compileAndGetRoot();
+				startNodes.push({
+					testPattern: patternCall,
+					start: 0,
+					index: 0,
+					argumentIndex: 0,
+					currentNode: root,
+					rootNode: root,
+					patternType: patternType,
+					subMatches: []
+				});
+			}
 		}
-		return undefined;
+		return startNodes;
+	}
+	//the tree should be compiled before this method is called
+	getPatternMatch(testPattern: SkriptPatternCall): MatchResult | undefined {
+		return this.getMatchingPatternPart(this.getStartNodes(testPattern));
 	}
 
 	getMatchingFunction(name: string): SkriptFunction | undefined {

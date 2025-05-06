@@ -1,10 +1,10 @@
 import { PatternData, TypeData } from '../../../pattern/data/PatternData';
 import { PatternTree } from '../../../pattern/PatternTree';
 import { PatternType } from '../../../pattern/PatternType';
+import { SkriptTypeState } from '../../storage/type/SkriptTypeState';
 import { SkriptContext } from '../../validation/SkriptContext';
 import { SkriptSection } from '../skriptSection/SkriptSection';
 import { ReflectExpressionSection } from './ReflectExpressionSection';
-import { SkriptTypeState } from '../../storage/type/SkriptTypeState';
 
 export class ReflectPropertySection extends ReflectExpressionSection {
 	propertyParentType: TypeData;
@@ -22,7 +22,7 @@ export class ReflectPropertySection extends ReflectExpressionSection {
 			const p1 = new PatternData("%'s " + p.skriptPatternString, "%'s " + p.regexPatternString, p.definitionLocation, PatternType.expression, this, [typeState, ...p.expressionArguments]);
 			const p2 = new PatternData(p.skriptPatternString + " of %", p.regexPatternString + " of %", p.definitionLocation, PatternType.expression, this, [...p.expressionArguments, typeState]);
 
-			context.parseResult.newPatterns.push([this, p1], [this, p2]);
+			context.parseResult.newPatterns.push([this.scope, p1], [this.scope, p2]);
 		}
 	}
 }

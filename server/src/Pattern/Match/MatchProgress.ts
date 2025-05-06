@@ -1,4 +1,3 @@
-import { PatternData } from '../data/PatternData';
 import { PatternTreeNode } from '../patternTreeNode/PatternTreeNode';
 import { PatternType } from '../PatternType';
 import { SkriptPatternCall } from '../SkriptPattern';
@@ -17,8 +16,8 @@ export interface MatchProgress {
 	/**the super match */
 	parent?: MatchProgress;
 
-	/**the node this submatch started checking at. is used to check against recursion. if we just started checking, we shouldn't check again.*/
-	startNode: PatternTreeNode;
+	/**the root node of currentNode. is used to check against recursion. if we just started checking, we shouldn't check again.*/
+	rootNode: PatternTreeNode;
 	/**the node this submatch is at currently. */
 	currentNode: PatternTreeNode;
 	/**the start of this submatch in charachters from the start of the full pattern string */

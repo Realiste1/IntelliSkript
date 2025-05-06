@@ -69,7 +69,6 @@ export class SkriptFolder extends SkriptFolderContainer {
 		this.uri = uri;
 		this.scope = new Scope(parent.getScope());
 	}
-	override getScope = () => this.scope;
 
 	createFoldersForUri(uri: URI): SkriptFolder {
 		console.log('creating folder for uri: ' + uri.toString() + ' , folder uri:' + this.uri.toString())

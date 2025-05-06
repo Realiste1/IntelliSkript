@@ -1,6 +1,6 @@
 import { PatternData } from "../../pattern/data/PatternData";
-import { Scope } from '../../pattern/Scope';
 import { PatternType } from "../../pattern/PatternType";
+import { Scope } from '../../pattern/Scope';
 import { SkriptPatternCall } from "../../pattern/SkriptPattern";
 import { TokenTypes } from '../../TokenTypes';
 import { SkriptTypeState } from '../storage/type/SkriptTypeState';
@@ -18,7 +18,7 @@ export class SkriptCommandSection extends SkriptSection {
 
 		//get the "player" type, not the entity literal
 		const playerType = super.getTypeData("player");
-		const commandSenderData = this.getPatternData(new SkriptPatternCall("command sender", PatternType.expression))?.fullMatch.matchedPattern;
+		const commandSenderData = this.getScope()?.getPatternMatch(new SkriptPatternCall("command sender", [PatternType.expression]))?.fullMatch.matchedPattern;
 		if (playerType && commandSenderData)
 			this.scope.addPattern(new PatternData("[the] player", "(the )?player", commandSenderData.definitionLocation, PatternType.expression, undefined, [], [], new SkriptTypeState(playerType)));
 

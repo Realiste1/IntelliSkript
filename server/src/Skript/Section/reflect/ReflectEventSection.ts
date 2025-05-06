@@ -1,10 +1,10 @@
 import { PatternData } from "../../../pattern/data/PatternData";
 import { PatternType } from "../../../pattern/PatternType";
+import { TokenTypes } from '../../../TokenTypes';
+import { SkriptTypeState } from '../../storage/type/SkriptTypeState';
 import { SkriptContext } from '../../validation/SkriptContext';
 import { SkriptSection } from '../skriptSection/SkriptSection';
 import { ReflectPatternContainerSection } from './ReflectPatternContainerSection';
-import { SkriptTypeState } from '../../storage/type/SkriptTypeState';
-import { TokenTypes } from '../../../TokenTypes';
 
 export class ReflectEventSection extends ReflectPatternContainerSection {
 	eventValues: PatternData[] = [];

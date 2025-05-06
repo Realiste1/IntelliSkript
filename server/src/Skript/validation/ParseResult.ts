@@ -1,9 +1,11 @@
 import { Diagnostic } from 'vscode-languageserver/browser';
-import { semanticTokenContainer, SemanticTokenLine } from '../section/UnOrderedSemanticTokensBuilder';
 import { SkriptNestHierarchy } from '../../nesting/SkriptNestHierarchy';
-import { SkriptSection } from '../section/skriptSection/SkriptSection';
 import { PatternData } from '../../pattern/data/PatternData';
+import { FrequencyMatrix } from '../../pattern/frequencyMatrix';
+import { Scope } from '../../pattern/Scope';
 import { SkriptPatternCall } from '../../pattern/SkriptPattern';
+import { SkriptSection } from '../section/skriptSection/SkriptSection';
+import { semanticTokenContainer, SemanticTokenLine } from '../section/UnOrderedSemanticTokensBuilder';
 
 export class ParseResult {
 
@@ -19,9 +21,11 @@ export class ParseResult {
 	newSection?: SkriptSection;
 	/**patterns parsed per hierarchy member */
 	patternsParsed: [SkriptPatternCall, SkriptNestHierarchy][] = [];
-	/**new patterns to add to which sections*/
-	newPatterns: [SkriptSection, PatternData][] = [];
+	/**new patterns to add to which scope*/
+	newPatterns: [Scope, PatternData][] = [];
 	constructor(tokens: semanticTokenContainer = new SemanticTokenLine()) {
 		this.tokens = tokens;
 	}
+	//frequency [from][to]
+	frequencyMatrix = new FrequencyMatrix();
 }

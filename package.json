@@ -79,17 +79,6 @@
 						"type": "boolean",
 						"default": true,
 						"description": "Disable this and reload VS code if you have a skript color theme plugin installed"
-					},
-					"intelliSkript.trace.server": {
-						"scope": "window",
-						"type": "string",
-						"enum": [
-							"off",
-							"messages",
-							"verbose"
-						],
-						"default": "off",
-						"description": "Traces the communication between VS Code and the language server."
 					}
 				}
 			}
@@ -234,6 +223,7 @@
 		"@eslint/js": "^9.13.0",
 		"@stylistic/eslint-plugin": "^2.9.0",
 		"@vscode/test-web": "^0.0.68",
+		"copy-webpack-plugin": "^13.0.0",
 		"eslint": "^9.13.0",
 		"path-browserify": "^1.0.1",
 		"ts-loader": "^9.5.1",
@@ -241,6 +231,7 @@
 		"typescript": "^5.8.2",
 		"typescript-eslint": "^8.26.0",
 		"webpack": "^5.90.1",
-		"webpack-cli": "^5.1.4"
+		"webpack-cli": "^5.1.4",
+		"webpack-merge": "^6.0.1"
 	}
 }

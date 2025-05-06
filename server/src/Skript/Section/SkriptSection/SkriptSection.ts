@@ -67,7 +67,7 @@ export class SkriptSection extends SkriptSectionGroup {
 	}
 
 	getTypeData(typeName: string): TypeData | undefined {
-		return this.getPatternData(new SkriptPatternCall(typeName, PatternType.type))?.fullMatch.matchedPattern;
+		return this.getScope()?.getPatternMatch(new SkriptPatternCall(typeName, [PatternType.type]))?.fullMatch.matchedPattern;
 	}
 	getParentSection(): SkriptSection | undefined {
 		return this.parent && this.parent instanceof SkriptSection ?
@@ -364,18 +364,16 @@ export class SkriptSection extends SkriptSectionGroup {
 			}
 			else {
 				let matchResult = undefined;
-				for (const mainPatternType of mainPatternTypes) {
-					const call = new SkriptPatternCall(pattern.pattern, mainPatternType, currentPatternArguments);
-					context.parseResult.patternsParsed.push([call, currentNode.cloneWithOffset(context.currentPosition)]);
+				const call = new SkriptPatternCall(pattern.pattern, mainPatternTypes, currentPatternArguments);
+				context.parseResult.patternsParsed.push([call, currentNode.cloneWithOffset(context.currentPosition)]);
 
-					//pass pattern by reference
-					matchResult = this.getPatternData(call);// context, mainPatternType, pattern, currentPatternArguments);
+				//pass pattern by reference
+				matchResult = this.getScope()?.getPatternMatch(call);// context, mainPatternType, pattern, currentPatternArguments);
 
-					if (matchResult) {
-						foundPattern = matchResult.fullMatch.matchedPattern;
-						this.visualizeMatch(context, pattern, matchResult.fullMatch);
-						break;
-					}
+				if (matchResult) {
+					foundPattern = matchResult.fullMatch.matchedPattern;
+					this.visualizeMatch(context, pattern, matchResult.fullMatch);
+					context.parseResult.frequencyMatrix.addPassedNodes(matchResult.nodesPassed);
 				}
 				if (!matchResult && isTopNode) {
 					context.addDiagnostic(currentNode.start, currentNode.end - currentNode.start, "can't understand this line (pattern detection is a work in progress. please report on discord)", DiagnosticSeverity.Hint, "IntelliSkript->Pattern");

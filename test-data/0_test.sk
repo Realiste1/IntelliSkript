@@ -94,6 +94,7 @@ on rightclick:
 on right click holding lead:
 	nbt compound from player's tool has tag "petleash"
 	set {_n} to string tag "petleash" of nbt compound of player's tool
+	
 	if {_n} is "null":
 		target entity is set
 		owner of target entity is player

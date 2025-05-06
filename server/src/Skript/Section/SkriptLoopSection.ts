@@ -1,9 +1,8 @@
 import { PatternData } from '../../pattern/data/PatternData';
-import { Scope } from '../../pattern/Scope';
 import { PatternType } from '../../pattern/PatternType';
+import { Scope } from '../../pattern/Scope';
 import { SkriptTypeState } from '../storage/type/SkriptTypeState';
 import { SkriptContext } from '../validation/SkriptContext';
-import { SkriptTypeSection } from './custom/SkriptTypeSection';
 import { SkriptSection } from './skriptSection/SkriptSection';
 
 export class SkriptLoopSection extends SkriptSection {

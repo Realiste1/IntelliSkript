@@ -1,10 +1,8 @@
 import { Hierarchy } from '../../Hierarchy';
-import { PatternMatcher } from '../../pattern/PatternMatcher';
 import { Scope } from '../../pattern/Scope';
-import { SkriptPatternCall } from '../../pattern/SkriptPattern';
 import { SkriptVariable } from '../storage/SkriptVariable';
 
-export class SkriptSectionGroup extends Hierarchy<SkriptSectionGroup> implements PatternMatcher {
+export class SkriptSectionGroup extends Hierarchy<SkriptSectionGroup> {
 	scope?: Scope;
 	definedVariables: Array<SkriptVariable> = [];
 	override children: SkriptSectionGroup[] = [];
@@ -24,8 +22,4 @@ export class SkriptSectionGroup extends Hierarchy<SkriptSectionGroup> implements
 	getScope(): Scope | undefined {
 		return this.scope ?? this.parent?.getScope();
 	}
-
-	getPatternData(testPattern: SkriptPatternCall) {
-		return this.getScope()?.getPatternData(testPattern);
-	};
 }

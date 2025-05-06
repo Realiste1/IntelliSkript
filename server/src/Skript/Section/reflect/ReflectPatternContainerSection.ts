@@ -1,8 +1,8 @@
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { PatternData } from '../../../pattern/data/PatternData';
 import { PatternTree } from '../../../pattern/PatternTree';
-import { Scope } from '../../../pattern/Scope';
 import { PatternType } from "../../../pattern/PatternType";
+import { Scope } from '../../../pattern/Scope';
 import { TokenTypes } from '../../../TokenTypes';
 import { SkriptTypeState } from '../../storage/type/SkriptTypeState';
 import { SkriptContext } from '../../validation/SkriptContext';
@@ -33,7 +33,7 @@ export class ReflectPatternContainerSection extends SkriptSection {
 					const argumentPosition = pattern.argumentPositions[counter];
 					//increase before converting to text, so the first argument will be 'expr-1'
 					counter++;
-					context.parseResult.newPatterns.push([this, new PatternData("expr-" + counter, "expr-" + counter, argumentPosition, PatternType.expression, this, [], [], argumentType)]);
+					context.parseResult.newPatterns.push([this.scope, new PatternData("expr-" + counter, "expr-" + counter, argumentPosition, PatternType.expression, this, [], [], argumentType)]);
 				}
 			}
 		}
@@ -42,7 +42,7 @@ export class ReflectPatternContainerSection extends SkriptSection {
 	addPattern(context: SkriptContext): void {
 		const pattern = this.parsePattern(context);
 		if (pattern)
-			context.parseResult.newPatterns.push([context.currentSkriptFile, pattern]);
+			context.parseResult.newPatterns.push([context.currentSkriptFile.scope, pattern]);
 	}
 
 	createSection(context: SkriptContext): SkriptSection | undefined {
@@ -67,9 +67,6 @@ export class ReflectPatternContainerSection extends SkriptSection {
 		else {
 			context.addDiagnostic(0, context.currentString.length, 'expected patterns here', DiagnosticSeverity.Error);
 		}
-	}
-	override getScope(): Scope | undefined {
-		return this.scope;
 	}
 	override finish(context: SkriptContext) {
 		for (const pattern of this.patterns)

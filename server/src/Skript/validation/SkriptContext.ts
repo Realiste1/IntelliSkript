@@ -1,13 +1,13 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Location, Range } from 'vscode-languageserver/browser';
 import { SkriptNestHierarchy } from '../../nesting/SkriptNestHierarchy';
+import { PatternData } from '../../pattern/data/PatternData';
+import { SkriptPatternMatchHierarchy } from '../../pattern/SkriptPatternMatchHierarchy';
 import { TokenModifiers } from '../../TokenModifiers';
 import { TokenTypes } from '../../TokenTypes';
+import { SkriptFile } from '../section/SkriptFile';
 import { SkriptSection } from "../section/skriptSection/SkriptSection";
 import { SemanticToken } from '../section/UnOrderedSemanticTokensBuilder';
-import { SkriptFile } from '../section/SkriptFile';
-import { SkriptPatternMatchHierarchy } from '../../pattern/SkriptPatternMatchHierarchy';
-import { PatternData } from '../../pattern/data/PatternData';
 import { ParseResult } from './ParseResult';
 
 //TOODO: make context able to 'push' and 'pop' (make a function able to modify the context or create an instance while keeping reference to the same diagnostics list

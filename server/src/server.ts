@@ -1,27 +1,20 @@
-import { ChangeAnnotation, CodeAction, CodeActionKind, CompletionItem, CompletionItemKind, CompletionParams, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, InsertTextFormat, MarkupContent, MarkupKind, Position, Range, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
+import { ChangeAnnotation, CodeAction, CodeActionKind, CompletionItem, CompletionItemKind, CompletionParams, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, InsertTextFormat, MarkupContent, MarkupKind, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as IntelliSkriptConstants from './IntelliSkriptConstants';
-import { PatternData } from './pattern/data/PatternData';
+import { MatchProgress } from './pattern/match/MatchProgress';
+import { PatternTreeNode } from './pattern/patternTreeNode/PatternTreeNode';
+import { removeDuplicates } from './pattern/removeDuplicates';
+import { SkriptPatternCall } from './pattern/SkriptPattern';
 import { SkriptFolder } from './skript/folder-container/SkriptFolder';
 import { SkriptWorkSpace } from './skript/folder-container/SkriptWorkSpace';
 import { SkriptFile } from './skript/section/SkriptFile';
-import { SkriptVariable } from './skript/storage/SkriptVariable';
 import { IndentData } from './skript/validation/IndentData';
-import { Sleep } from './Thread';
+import { SkriptContext } from './skript/validation/SkriptContext';
+import { WordInfo } from './skript/validation/wordInfo';
+import { Deferred, Sleep } from './Thread';
 import { TokenModifiers } from './TokenModifiers';
 import { TokenTypes } from './TokenTypes';
-import { Deferred } from './Thread'
-import { WordInfo } from './skript/validation/wordInfo'
-import { PatternTree } from './pattern/PatternTree';
-import { PatternType } from './pattern/PatternType';
-import { PatternTreeNode } from './pattern/patternTreeNode/PatternTreeNode';
-import { SkriptSection } from './skript/section/skriptSection/SkriptSection';
-import { MatchProgress } from './pattern/match/MatchProgress';
-import { SkriptPatternCall } from './pattern/SkriptPattern';
-import { removeDuplicates } from './pattern/removeDuplicates';
-import { SkriptContext } from './skript/validation/SkriptContext';
-
 
 export class Server {
 	initialized = new Deferred<void>();
@@ -289,6 +282,8 @@ export class Server {
 				// Reset all cached document settings
 				this.documentSettings.clear();
 				this.globalSettings = this.getGlobalSettings();
+				//invalidate everything
+				currentServer.currentWorkSpace.children.forEach((child) => child.invalidate());
 			} else {
 			}
 
@@ -339,6 +334,8 @@ export class Server {
 		});
 
 		const validateTextDocument = async (textDocument: TextDocument, couldBeChanged: boolean = true): Promise<void> => {
+			//retrieve settings while validating
+			const settingsRequest = this.globalSettings;// this.getDocumentSettings(textDocument.uri);
 			const unlock = await this.currentWorkSpace.mutex.lock();
 			await this.currentWorkSpace.validateTextDocument(textDocument, couldBeChanged);
 
@@ -347,8 +344,31 @@ export class Server {
 			if (validatedDocument) {
 				const diagnostics: Diagnostic[] = validatedDocument.parseResult.diagnostics;
 
+				//filter diagnostics based on the filter
+
 				// Send the computed diagnostics to VSCode.
-				connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+				const settings = await settingsRequest;
+				let filteredDiagnostics: Diagnostic[] = [];
+				let excemptRegex: RegExp | undefined;
+				if (settings.ErrorExempts == "") {
+					filteredDiagnostics = diagnostics;
+				} else {
+					try {
+						excemptRegex = new RegExp(settings.ErrorExempts);
+
+					}
+					catch {
+						connection.window.showErrorMessage('this regex is invalid');
+					}
+					for (const diagnostic of diagnostics) {
+						if (!excemptRegex?.test(diagnostic.code as string)) {
+							filteredDiagnostics.push(diagnostic);
+						}
+					}
+				}
+
+
+				connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: filteredDiagnostics });
 			}
 		}
 
@@ -652,7 +672,6 @@ export class Server {
 					}
 					const editPos = file.document.offsetAt(completionParams.position);
 
-
 					//todo: check if we're not typing behind comments
 
 					const lineContext = file.getLineContext(completionParams.position.line);
@@ -665,9 +684,11 @@ export class Server {
 					for (const [patternCall, node] of parsedContext.parseResult.patternsParsed) {
 						if (node.end == editPos) {
 							const wordToComplete = trimmedContext.currentString.substring(trimmedContext.currentString.lastIndexOf(' ') + 1);
-							const completions = removeDuplicates(this.getPossibleCompletions(section, patternCall));
+							const completions = removeDuplicates(await this.getPossibleCompletions(parsedContext, patternCall));
+							let sortNumber = 0;
 							for (const completion of completions) {
-								results.push({ textEdit: { range: { start: completionParams.position, end: completionParams.position }, newText: completion }, label: wordToComplete + completion, filterText: '#' })
+								results.push({ textEdit: { range: { start: completionParams.position, end: completionParams.position }, newText: completion }, label: wordToComplete + completion, filterText: '#', sortText: sortNumber.toString() })
+								sortNumber++;
 							}
 							break;
 						}
@@ -778,57 +799,59 @@ export class Server {
 			variable: undefined
 		};
 	}
-	getPossibleCompletions(section: SkriptSection, patternCall: SkriptPatternCall): string[] {
+	async getPossibleCompletions(context: SkriptContext, patternCall: SkriptPatternCall): Promise<string[]> {
 		const completions: string[] = [];
+
 		//check if there are any possible patterns
 		//calculate patterns
-		const sectionContainer = section.getScope();
+		const sectionContainer = context.currentSection.getScope();
 		if (sectionContainer) {
-			for (const container of sectionContainer.containersToTraverse) {
-				const tree = container.trees[patternCall.patternType];
-				const root = tree.compileAndGetRoot();
-				//traverse nodes following the charachters until we reached the end of the pattern in construction. then branch out to see possible pattern types
-				let progress: MatchProgress = { testPattern: patternCall, patternType: patternCall.patternType, start: 0, index: 0, argumentIndex: 0, startNode: root, currentNode: root, subMatches: [] }
+			const matrix = context.currentSkriptFile.parseResult.frequencyMatrix;
+			let rootNodes: MatchProgress[] = [];
+			let nodesToFollow: MatchProgress[] = sectionContainer.getStartNodes(patternCall);
+			interface ExpandNode {
+				node: PatternTreeNode, pattern: string, weight: number
+			};
 
-				interface expandNode {
-					node: PatternTreeNode, pattern: string
-				};
-
-				let nodesToExpandFrom: expandNode[] = [];
-
-				let nodesToFollow = [progress];
-				let currentProgress: MatchProgress | undefined;
-				//the last array elements will be processed first
-				while (currentProgress = nodesToFollow.pop()) {
-					const nextSteps = sectionContainer.stepTreeNode(currentProgress);
-					if (currentProgress.result) {
-						//as it turns out, the line is correct as it is.
+			let nodesToExpandFrom: ExpandNode[] = [];
+			let currentProgress: MatchProgress | undefined;
+			//the last array elements will be processed first
+			while (currentProgress = nodesToFollow.pop() || (currentProgress = rootNodes.pop())) {
+				const nextSteps = sectionContainer.stepTreeNode(currentProgress);
+				if (currentProgress.result) {
+					//as it turns out, the line is correct as it is.
+				}
+				for (const nextStep of nextSteps) {
+					if (nextStep.index >= patternCall.pattern.length) {
+						nodesToExpandFrom.push({ node: nextStep.currentNode, pattern: '', weight: matrix.getFrequency(currentProgress.currentNode, nextStep.currentNode) });
 					}
-					for (const nextStep of nextSteps) {
-						if (nextStep.index >= patternCall.pattern.length) {
-							nodesToExpandFrom.push({ node: nextStep.currentNode, pattern: '' });
+					else {
+						if (nextStep.currentNode == nextStep.rootNode && nextStep.rootNode != currentProgress.rootNode) {
+							rootNodes.push(nextStep);
+							//we substituted. this is costly! we basically start matching again.
 						}
 						else {
 							nodesToFollow.push(nextStep);
 						}
 					}
 				}
-				let nextStep: expandNode | undefined;
-				//now check if there are any string nodes which could fit here
-				while (nextStep = nodesToExpandFrom.pop()) {
-					if (nextStep.node.stringOrderedChildren.size) {
-						if (nextStep.node.patternsEndedHere.length) {
-							completions.push(nextStep.pattern);
-						}
-						//explore nodes
-						for (let [key, node] of nextStep.node.stringOrderedChildren) {
-							nodesToExpandFrom.push({ node: node, pattern: nextStep.pattern + key });
-						}
+			}
+			//the elements checked first are at the end
+			nodesToExpandFrom.reverse();
+			let nextStep: ExpandNode | undefined;
+			nodesToExpandFrom.sort((a, b) => a.weight - b.weight);
+			//now check if there are any string nodes which could fit here
+			while (nextStep = nodesToExpandFrom.pop()) {
+				if (nextStep.node.staticTypeChildren.size || nextStep.node.regExpOrderedChildren.size || nextStep.node.patternsEndedHere.length) {
+					completions.push(nextStep.pattern);
+					if (completions.length >= 20) break;
+				}
+				if (nextStep.node.stringOrderedChildren.size) {
+					//explore nodes
+					for (let [key, childNode] of nextStep.node.stringOrderedChildren) {
+						nodesToExpandFrom.push({ weight: context.currentSkriptFile.parseResult.frequencyMatrix.getFrequency(nextStep.node, childNode), node: childNode, pattern: nextStep.pattern + key });
 					}
-					else {
-						completions.push(nextStep.pattern);
-						if (completions.length >= 5) break;
-					}
+					nodesToExpandFrom.sort((a, b) => a.weight - b.weight);
 				}
 			}
 		}

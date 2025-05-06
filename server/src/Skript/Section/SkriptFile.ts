@@ -1,10 +1,12 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DiagnosticSeverity, Range, TextEdit } from 'vscode-languageserver/browser';
 import { URI } from 'vscode-uri';
+import { consumingLineTerminatorRegexp, LineTerminatorRegExp } from '../../IntelliSkriptConstants';
 import { PatternData } from '../../pattern/data/PatternData';
-import { Scope } from '../../pattern/Scope';
 import { PatternType } from "../../pattern/PatternType";
+import { Scope } from '../../pattern/Scope';
 import { SkriptPatternMatchHierarchy } from '../../pattern/SkriptPatternMatchHierarchy';
+import { currentServer } from '../../server';
 import { TokenTypes } from '../../TokenTypes';
 import { SkriptFolder } from '../folder-container/SkriptFolder';
 import { SkriptWorkSpace } from '../folder-container/SkriptWorkSpace';
@@ -20,18 +22,15 @@ import { ReflectExpressionSection } from './reflect/ReflectExpressionSection';
 import { ReflectImportSection } from './reflect/ReflectImportSection';
 import { ReflectPatternContainerSection } from './reflect/ReflectPatternContainerSection';
 import { ReflectPropertySection } from './reflect/ReflectPropertySection';
+import { ReflectSectionSection } from './reflect/ReflectSectionSection';
+import { SkriptAliasesSection } from './SkriptAliasesSection';
 import { SkriptCommandSection } from './SkriptCommandSection';
 import { SkriptEventListenerSection } from './SkriptEventListenerSection';
 import { SkriptFunction } from './SkriptFunctionSection';
 import { SkriptOptionsSection } from './SkriptOptionsSection';
 import { SkriptSection } from "./skriptSection/SkriptSection";
-import { SemanticTokenLine, UnOrderedSemanticTokensBuilder } from './UnOrderedSemanticTokensBuilder';
-import { ReflectSectionSection } from './reflect/ReflectSectionSection';
-import { SkriptAliasesSection } from './SkriptAliasesSection';
 import { SkriptVariablesSection } from './SkriptVariablesSection';
-import { currentServer } from '../../server'
-import { consumingLineTerminatorRegexp, LineTerminatorRegExp } from '../../IntelliSkriptConstants';
-import { ReflectPatternSection } from './reflect/ReflectPatternSection';
+import { SemanticTokenLine, UnOrderedSemanticTokensBuilder } from './UnOrderedSemanticTokensBuilder';
 
 
 export class SkriptFile extends SkriptSection {
@@ -168,10 +167,7 @@ export class SkriptFile extends SkriptSection {
 						//event
 						s = new SkriptEventListenerSection(context, result.detectedPattern);
 					}
-					else {
-						//can't recognise this of section
-						context.addDiagnostic(0, context.currentString.length, 'can\'t recognise this section. (pattern detection is a work in progress. please report on discord)', DiagnosticSeverity.Hint, "IntelliSkript->Section->Not Recognised");
-					}
+					//else we can't recognise this section. message will be handled elsewhere.
 				}
 			}
 		}
@@ -227,6 +223,9 @@ export class SkriptFile extends SkriptSection {
 		if (indentData.hasColon) {
 			//indent
 			sectionContext.parseResult.newSection = sectionContext.currentSection.createSection(sectionContext);
+			if (sectionContext.parseResult.newSection == undefined) {
+				sectionContext.addDiagnostic(0, sectionContext.currentString.length, 'can\'t recognise this section. (pattern detection is a work in progress. please report on discord)', DiagnosticSeverity.Hint, "IntelliSkript->Section->Not Recognised");
+			}
 		}
 		else {
 			//context.currentString = trimmedLine;
@@ -396,13 +395,12 @@ export class SkriptFile extends SkriptSection {
 							context.currentSection?.children.push(newSection);
 							context.currentSection = newSection;
 						}
-						//add patterns to section
-						if (context.currentSection instanceof ReflectPatternSection) {
-							const scope = (context.currentSection.parent as ReflectPatternContainerSection).scope;
-							for (const [section, pattern] of mostValidContext.parseResult.newPatterns) {
-								section.scope?.addPattern(pattern);
-							}
+						//add patterns to scope
+						for (const [scope, pattern] of mostValidContext.parseResult.newPatterns) {
+							scope.addPattern(pattern);
 						}
+
+						this.parseResult.frequencyMatrix.push(mostValidContext.parseResult.frequencyMatrix);
 						lastCodeLine = currentLineIndex;
 						indentData.finishLine();
 					}
