@@ -1,11 +1,24 @@
+import { TelemetryReporter } from '@vscode/extension-telemetry';
 import { ExtensionContext, ExtensionMode, extensions, RelativePattern, TextDocumentContentProvider, Uri, window, workspace } from 'vscode';
 import { BaseLanguageClient, LanguageClientOptions, RevealOutputChannelOn } from 'vscode-languageclient';
 import { resourceFiles } from './assets/resourceFiles';
 
+//the connection string is not sensitive, so we can just let it be here.
+const connectionString = "InstrumentationKey=3beed08d-7b3d-40cd-a129-05ff7cb7b2f9;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/;ApplicationId=bfda7f12-a9c2-4196-bd99-850fa9f29864";
+
+
 const intelliskriptScheme = 'intelliskript';
 const resourceFolderString = '/resources';
+let reporter : TelemetryReporter;
 export async function startClient(creationFunction: (context: ExtensionContext, clientOptions: LanguageClientOptions) => BaseLanguageClient, context: ExtensionContext): Promise<void> {
 	console.log('intelliskript activated!');
+	// create telemetry reporter on extension activation
+	reporter = new TelemetryReporter(connectionString);
+
+	// ensure it gets properly disposed. Upon disposal the events will be flushed
+	context.subscriptions.push(reporter);
+
+
 	if (context.extensionMode != ExtensionMode.Production) {
 		//debugging
 		setTimeout(function () {
@@ -91,6 +104,8 @@ export async function activateClient(context: ExtensionContext, client: BaseLang
 	context.subscriptions.push(readFileListener, listFilesListener, getDocumentsListener);
 	//window.showInformationMessage('client finished loading');
 	console.log('intelliskript is ready');
+	// send event any time after activation
+	reporter.sendTelemetryEvent('clientActivated');//, { 'stringProp': 'some string' }, { 'numericMeasure': 123 });
 
 }
 

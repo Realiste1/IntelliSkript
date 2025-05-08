@@ -19,7 +19,8 @@ const { merge } = require('webpack-merge');
 const sharedConfig = {
 	mode: 'none',
 	externals: {
-		vscode: 'commonjs vscode', // ignored because it doesn't exist
+		// vscode is already included, so we don't have to include it
+		vscode: 'commonjs vscode',
 	},
 	devtool: 'nosources-source-map',
 	performance: {
@@ -27,12 +28,12 @@ const sharedConfig = {
 	},
 	resolve: {
 		conditionNames: ['import', 'require'],
-		mainFields: ['browser', 'module', 'main'],
 		extensions: ['.ts', '.js'], // support ts-files and js-files
 		alias: {},
 		fallback: {
 			path: require.resolve('path-browserify'),
 		},
+		mainFields: ['browser', 'module', 'main'],
 	},
 	module: {
 		rules: [
@@ -50,10 +51,24 @@ const sharedConfig = {
 };
 
 /** @type WebpackConfig */
-const nodeClientConfig = merge(sharedConfig, {
-	context: path.join(__dirname, 'client'),
-
+const sharedNodeConfig = {
 	target: 'node', // web extensions run in a webworker context
+	resolve: {
+		mainFields: ['module', 'main'],
+	}
+};
+
+/** @type WebpackConfig */
+const sharedBrowserConfig = {
+	target: 'webworker', // web extensions run in a webworker context
+	resolve: {
+		mainFields: ['browser', 'module', 'main'],
+	}
+};
+
+/** @type WebpackConfig */
+const nodeClientConfig = merge(sharedConfig, sharedNodeConfig, {
+	context: path.join(__dirname, 'client'),
 	entry: {
 		nodeClientMain: './src/nodeClientMain.ts',
 	},
@@ -68,10 +83,9 @@ const nodeClientConfig = merge(sharedConfig, {
 });
 
 /** @type WebpackConfig */
-const nodeServerConfig = merge(sharedConfig, {
+const nodeServerConfig = merge(sharedConfig, sharedNodeConfig, {
 	context: path.join(__dirname, 'server'),
 
-	target: 'node', // web extensions run in a webworker context
 	entry: {
 		nodeServerMain: './src/nodeServerMain.ts',
 	},
@@ -85,10 +99,9 @@ const nodeServerConfig = merge(sharedConfig, {
 });
 
 /** @type WebpackConfig */
-const browserClientConfig = merge(sharedConfig, {
+const browserClientConfig = merge(sharedConfig, sharedBrowserConfig, {
 	context: path.join(__dirname, 'client'),
 
-	target: 'webworker', // web extensions run in a webworker context
 	entry: {
 		browserClientMain: './src/browserClientMain.ts',
 	},
@@ -103,10 +116,9 @@ const browserClientConfig = merge(sharedConfig, {
 });
 
 /** @type WebpackConfig */
-const browserServerConfig = merge(sharedConfig, {
+const browserServerConfig = merge(sharedConfig, sharedBrowserConfig, {
 	context: path.join(__dirname, 'server'),
 
-	target: 'webworker', // web extensions run in a webworker context
 	entry: {
 		browserServerMain: './src/browserServerMain.ts',
 	},

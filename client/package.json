@@ -13,6 +13,7 @@
 		"vscode": "^1.85.0"
 	},
 	"dependencies": {
+		"@vscode/extension-telemetry": "^1.0.0",
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {

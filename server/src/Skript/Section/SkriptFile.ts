@@ -232,6 +232,7 @@ export class SkriptFile extends SkriptSection {
 			sectionContext.currentSection.processLine(sectionContext);
 			//context.currentSection.endLine = context.currentLine;
 		}
+		throw new Error("test");
 		return sectionContext;
 	}
 
@@ -323,7 +324,20 @@ export class SkriptFile extends SkriptSection {
 					let mostValidContext: SkriptContext | undefined;
 
 					const checkSection = (section: SkriptSection): boolean => {
-						const validatedContext = SkriptFile.validateCodeLine(trimmedContext, section, indentData);
+						let validatedContext: SkriptContext;
+						try {
+							validatedContext = SkriptFile.validateCodeLine(trimmedContext, section, indentData);
+						}
+						catch (exception) {
+							let errorMessage;
+							if (exception instanceof Error) {
+								errorMessage = `Name: ${exception.name}\nMessage:\n${exception.message}\nStack:\n${exception.stack ?? "unknown"}`;
+							}
+							else {
+								errorMessage = `Unknown Error:\n${String(exception)}`;
+							}
+							throw new Error(`\nwhile validating line ${currentLineIndex} of ${this.document.uri}:\n` + errorMessage);
+						}
 						const parsedCorrectly = validatedContext.parseResult.diagnostics.length == 0;
 						//first we check the expected section, so the most validcontext will be undefined at this point
 						if (!mostValidContext

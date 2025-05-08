@@ -55,14 +55,13 @@ export class SemanticTokenLine {
 				for (const lineToken of lineTokens) {
 					if ((token.position.character + token.length > lineToken.position.character) &&
 						(lineToken.position.character + lineToken.length > token.position.character))
-						throw "token overlap";
+						throw new Error(`token overlap at ${token.position}`);
 				}
 			}
 			this.tokens.push(token);
 		}
-		else if(checkTokens && token.length < 0)
-		{
-			throw "token with negative length";
+		else if (checkTokens && token.length < 0) {
+			throw new Error(`token with negative length at ${token.position}`);
 		}
 	}
 }
