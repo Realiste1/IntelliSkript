@@ -232,7 +232,6 @@ export class SkriptFile extends SkriptSection {
 			sectionContext.currentSection.processLine(sectionContext);
 			//context.currentSection.endLine = context.currentLine;
 		}
-		throw new Error("test");
 		return sectionContext;
 	}
 

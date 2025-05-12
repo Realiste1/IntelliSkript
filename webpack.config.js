@@ -33,7 +33,6 @@ const sharedConfig = {
 		fallback: {
 			path: require.resolve('path-browserify'),
 		},
-		mainFields: ['browser', 'module', 'main'],
 	},
 	module: {
 		rules: [
@@ -48,11 +47,15 @@ const sharedConfig = {
 			},
 		],
 	},
+	output: {
+		filename: '[name].js',
+		devtoolModuleFilenameTemplate: '../[resource-path]'
+	},
 };
 
 /** @type WebpackConfig */
 const sharedNodeConfig = {
-	target: 'node', // web extensions run in a webworker context
+	target: 'node', // desktop extensions run in a node context
 	resolve: {
 		mainFields: ['module', 'main'],
 	}
@@ -65,69 +68,50 @@ const sharedBrowserConfig = {
 		mainFields: ['browser', 'module', 'main'],
 	}
 };
-
 /** @type WebpackConfig */
-const nodeClientConfig = merge(sharedConfig, sharedNodeConfig, {
+const sharedClientConfig = {
 	context: path.join(__dirname, 'client'),
-	entry: {
-		nodeClientMain: './src/nodeClientMain.ts',
-	},
 	output: {
-		filename: '[name].js',
 		path: path.join(__dirname, 'client', 'dist'),
 		libraryTarget: 'commonjs',
-
-		devtoolModuleFilenameTemplate: info =>
-			"webpack:///" + path.relative(__dirname, info.absoluteResourcePath).replace(/\\/g, "/")
 	},
-});
+};
 
 /** @type WebpackConfig */
-const nodeServerConfig = merge(sharedConfig, sharedNodeConfig, {
+const sharedServerConfig = {
 	context: path.join(__dirname, 'server'),
-
-	entry: {
-		nodeServerMain: './src/nodeServerMain.ts',
-	},
 	output: {
-		filename: '[name].js',
 		path: path.join(__dirname, 'server', 'dist'),
 		libraryTarget: 'var',
 		library: 'serverExportVar',
-		devtoolModuleFilenameTemplate: '../[resource-path]'
-	},
+	}
+};
+
+/** @type WebpackConfig */
+const nodeClientConfig = merge(sharedConfig, sharedNodeConfig, sharedClientConfig, {
+	entry: {
+		nodeClientMain: './src/nodeClientMain.ts',
+	}
 });
 
 /** @type WebpackConfig */
-const browserClientConfig = merge(sharedConfig, sharedBrowserConfig, {
-	context: path.join(__dirname, 'client'),
+const nodeServerConfig = merge(sharedConfig, sharedNodeConfig, sharedServerConfig, {
+	entry: {
+		nodeServerMain: './src/nodeServerMain.ts',
+	}
+});
 
+/** @type WebpackConfig */
+const browserClientConfig = merge(sharedConfig, sharedBrowserConfig, sharedClientConfig, {
 	entry: {
 		browserClientMain: './src/browserClientMain.ts',
 	},
-	output: {
-		filename: '[name].js',
-		path: path.join(__dirname, 'client', 'dist'),
-		libraryTarget: 'commonjs',
-
-		devtoolModuleFilenameTemplate: info =>
-			"webpack:///" + path.relative(__dirname, info.absoluteResourcePath).replace(/\\/g, "/")
-	},
 });
 
 /** @type WebpackConfig */
-const browserServerConfig = merge(sharedConfig, sharedBrowserConfig, {
-	context: path.join(__dirname, 'server'),
-
+const browserServerConfig = merge(sharedConfig, sharedBrowserConfig, sharedServerConfig, {
 	entry: {
 		browserServerMain: './src/browserServerMain.ts',
-	},
-	output: {
-		filename: '[name].js',
-		path: path.join(__dirname, 'server', 'dist'),
-		libraryTarget: 'var',
-		library: 'serverExportVar',
-		devtoolModuleFilenameTemplate: '../[resource-path]'
 	},
 });
 

@@ -48,6 +48,9 @@ export class SemanticTokenLine {
 	}
 	push(token: SemanticToken): void {
 		const checkTokens = IntelliSkriptConstants.IsDebugMode && true;
+		function positionToString(position: Position) {
+			return `line ${position.line}, char ${position.character}`;
+		}
 		if (token.length > 0) {
 			const lineTokens = this.tokens;
 			if (checkTokens) {
@@ -55,13 +58,13 @@ export class SemanticTokenLine {
 				for (const lineToken of lineTokens) {
 					if ((token.position.character + token.length > lineToken.position.character) &&
 						(lineToken.position.character + lineToken.length > token.position.character))
-						throw new Error(`token overlap at ${token.position}`);
+						throw new Error(`token overlap at ${positionToString(token.position)}`);
 				}
 			}
 			this.tokens.push(token);
 		}
 		else if (checkTokens && token.length < 0) {
-			throw new Error(`token with negative length at ${token.position}`);
+			throw new Error(`token with negative length at ${positionToString(token.position)}`);
 		}
 	}
 }

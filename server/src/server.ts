@@ -29,8 +29,6 @@ export class Server {
 		// Create a simple text document manager.
 		const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-
-
 		//this function will unlock the workspace when it finished loading
 		let unlockWorkSpace: () => void;
 

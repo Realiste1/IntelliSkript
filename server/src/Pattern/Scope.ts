@@ -144,7 +144,9 @@ export class Scope {
 							//the pattern type has to be expression, as that's the only pattern type which can substitute and be a substitute
 							//we don't have to test for type, because type can't substitute.
 							//we don't have to test for event, because we'd already have tested that as progress.parent.
-							patternType: PatternType.expression
+							patternType: PatternType.expression,
+							//don't add this match yet, it's done in the testParentNode function
+							subMatches: []
 						};
 						//create a new parent node, which replaces the current node. the current node becomes a child.
 						testParentNode(parentProgress);

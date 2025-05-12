@@ -1,11 +1,11 @@
 on click:
-	
+
 on click:
 
 effect:
 	patterns:
 		teststatic %*object%
-
+		
 command /backpack:
 	aliases: bp
 	trigger:
@@ -20,7 +20,7 @@ command /backpack:
 			add 1 to {_cc}
 		set {_c} to 1
 		
-			
+		
 on inventory close:
 	send "%event-player%"
 	if the name of event-player's current inventory is "&8Backpack":
@@ -89,7 +89,7 @@ on rightclick:
 			
 on rightclick:
 	set {_test} to {_}
-
+	
 	if players item is "&lAtmos Sword":
 on right click holding lead:
 	nbt compound from player's tool has tag "petleash"
@@ -274,3 +274,17 @@ on break of lightning rod:
 		drop a furnace named "Advanced Furnace" at {_belowLocation}
 		set block at {_belowLocation} to air
 		set block at location of event-block to air
+		
+	set {_progstr} to "&7Progress: "
+	if {dailychestsforstreak::%{_p}%} <_3:
+		loop {dailychestsforstreak::%{_p}%} times:
+			set {_progstr} to "%{_progstr}%&6♦"
+		loop 3 - {dailychestsforstreak::%{_p}%} times:
+			set {_progstr} to "%{_progstr}%&7♦"
+		set {_progstr} to "%{_progstr}% &7[%{dailychestsforstreak::%{_p}%}%/3]"
+	else:
+		set {_progstr} to "&7Progress: &a&1DONE! &7[3/3]"
+	add {_progstr} to {_lore::*}
+	if {rewardcheststreak::%{_p}%} < 5:
+		add "&7Next milestone: &65 Days" to {_lore::*}
+	else:
