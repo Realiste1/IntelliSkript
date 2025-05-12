@@ -84,9 +84,9 @@ export class Scope {
 
 		const pattern = progress.testPattern.pattern;
 
-		function isSeparator(checkIndex: number = progress.index): boolean {
-			return / |'/.test(pattern[checkIndex]);
-		}
+		//function isSeparator(checkIndex: number = progress.index): boolean {
+		//	return / |'/.test(pattern[checkIndex]);
+		//}
 
 		//check if this end node 'works'
 		const checkEndNode = (endNodeData: PatternData, checkIndex = progress.index) => {
@@ -97,7 +97,7 @@ export class Scope {
 				progress.result = new MatchResult(progress.testPattern, fullMatch);
 				//this is the end of the pattern. now the full pattern has matched!
 			}
-			else if (checkIndex == pattern.length || isSeparator(checkIndex) && canBeSubPattern(progress.patternType)) {
+			else if (canBeSubPattern(progress.patternType)) {
 				//this part, a substitute, was parsed correctly. but now, we should continue the parent node.
 				//we will iterate over all parent type nodes which accept an instance of the return value.
 				//basically, we replaced the subpattern for a '%'
@@ -180,9 +180,8 @@ export class Scope {
 		}
 		if (progress.index < pattern.length) {
 			//maybe the current part of the pattern belongs to a submatch?
-			const canSubMatch = progress.index == 0 || isSeparator(progress.index - 1);
-			const hasValidInstanceNodes = canSubMatch && progress.currentNode.instanceTypeChildren.size > 0;
-			const hasValidStaticNodes = canSubMatch && progress.currentNode.staticTypeChildren.size > 0;
+			const hasValidInstanceNodes = progress.currentNode.instanceTypeChildren.size > 0;
+			const hasValidStaticNodes = progress.currentNode.staticTypeChildren.size > 0;
 
 			//all possibilities have been tested, but there haven't been any children who fit this pattern. we need to submatch.
 			//we will try finding a pattern from the expression trees which returns an instance of the expected type.

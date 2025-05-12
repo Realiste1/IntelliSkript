@@ -363,6 +363,12 @@ export class SkriptSection extends SkriptSectionGroup {
 
 			}
 			else {
+				let doubleSpacesRegex = /(?:\s{2,}|[^\S ])/g;
+				let nonWhiteSpaceMatchArray;
+				while (nonWhiteSpaceMatchArray = doubleSpacesRegex.exec(pattern.pattern)) {
+					let start = pattern.getLinePos(nonWhiteSpaceMatchArray.index);
+					context.addDiagnostic(start, pattern.getLinePos(nonWhiteSpaceMatchArray.index + nonWhiteSpaceMatchArray[0].length) - start, 'Expected a single space here', DiagnosticSeverity.Warning, "IntelliSkript->Pattern->WhiteSpace");
+				}
 				let matchResult = undefined;
 				const call = new SkriptPatternCall(pattern.pattern, mainPatternTypes, currentPatternArguments);
 				context.parseResult.patternsParsed.push([call, currentNode.cloneWithOffset(context.currentPosition)]);

@@ -2,10 +2,15 @@
 object->predefined
 number->predefined
 block->location, metadata holder
-entity->location, metadata holder
+entity->location, metadata holder, named
 living entity->entity
 offline player->command sender
 player->offline player, livingentity
 guildchannel->channel
 entity type->entity data
 projectile->entity type
+block->named
+gamerule->named
+script->named
+function->named
+slot->named

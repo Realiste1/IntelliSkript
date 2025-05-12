@@ -38,4 +38,6 @@ type byte:
 	
 type integer:
 	inherits: number
-	
+
+#used in the expression 'name of'
+type named:
