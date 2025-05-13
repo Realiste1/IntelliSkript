@@ -89,10 +89,10 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 		const uri: URI = URI.parse(document.uri);
 		let file = this.getSkriptFileByUri(uri);
 		if (!file) {
-			const folder = this.getFolderByUri(uri);
+			const folder = this.getSubFolderByUri(uri);
 			file = new SkriptFile(folder ?? this, document);
 			if (folder) {
-				folder.addFile(file);
+				folder.createFoldersForUri(uri).addFile(file);
 			}
 			else {
 				this.looseFiles.push(file);

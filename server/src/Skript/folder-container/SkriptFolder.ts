@@ -17,6 +17,10 @@ export class SkriptFolder extends SkriptFolderContainer {
 	getPreferredSkriptFileIndexByUri(uri: URI): number {
 		return sortedIndex(this.files, uri, (a, b) => a.document.uri < b.toString());
 	}
+	getPreferredSkriptFolderIndexByUri(uri: URI): number {
+		//string comparison will still work if it's a subpath, since earlier charachters have priority
+		return sortedIndex(this.children, uri, (a, b) => a.uri.toString() < b.toString());
+	}
 
 	addFile(file: SkriptFile) {
 		const index = this.getPreferredSkriptFileIndexByUri(file.uri);
@@ -42,30 +46,28 @@ export class SkriptFolder extends SkriptFolderContainer {
 	/**validate files recursively, until we find the file
 	 * @param endFile validate until this file is encountered */
 	async validateRecursively(endFile?: SkriptFile): Promise<boolean> {
-		//if the last file isn't validated, then we need to recalculate the patterns.
 		//when a file invalidates, all files after it invalidate too.
-		if (this.files.length == 0 || !this.files[this.files.length - 1].validated) {
-			const isAddonFolder = this.parent instanceof SkriptWorkSpace && this.parent.addonFolder === this;
-			this.scope = isAddonFolder ? new Scope(undefined) : this.parent instanceof SkriptFolder ? this.parent.scope : new Scope(this.parent.getScope());
+		const isAddonFolder = this.parent instanceof SkriptWorkSpace && this.parent.addonFolder === this;
+		this.scope = isAddonFolder ? new Scope(undefined) : this.parent instanceof SkriptFolder ? this.parent.scope : new Scope(this.parent.getScope());
 
-			//first, validate all folders
-			for (const child of this.children) {
-				if (await child.validateRecursively(endFile)) {
-					return true;
-				}
-			}
-
-			//then, validate all files
-			for (const file of this.files) {
-				//this way, a file won't know what is previous to it
-				if (!file.validated)
-					await file.validate();
-				this.scope.merge(file.scope);
-
-				if (file === endFile) //we don't need patterns after this
-					return true;
+		//first, validate all folders
+		for (const child of this.children) {
+			if (await child.validateRecursively(endFile)) {
+				return true;
 			}
 		}
+
+		//then, validate all files
+		for (const file of this.files) {
+			//this way, a file won't know what is previous to it
+			if (!file.validated)
+				await file.validate();
+			this.scope.merge(file.scope);
+
+			if (file === endFile) //we don't need patterns after this
+				return true;
+		}
+
 
 		return false;
 	}
@@ -92,7 +94,7 @@ export class SkriptFolder extends SkriptFolderContainer {
 			else {
 				//TODO: make them insert alphabetically
 				const newChild = new SkriptFolder(this, addToUri(this.uri, relativePath.substring(0, offset)));
-				this.children.push(newChild);
+				this.children.splice(this.getPreferredSkriptFileIndexByUri(newChild.uri), 0, newChild);
 				return newChild.createFoldersForUri(uri);
 			}
 		}

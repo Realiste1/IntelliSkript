@@ -278,7 +278,7 @@ export class SkriptFile extends SkriptSection {
 					context.addDiagnosticAbsolute({
 						start: { line: startLine, character: 0 },
 						end: { line: startLine, character: terminatedLines[startLine].length }
-					}, "empty configuration section (expected something here)", DiagnosticSeverity.Warning, "IntelliSkript->Indent->Empty");
+					}, "empty section (expected something here)", DiagnosticSeverity.Warning, "IntelliSkript->Indent->Empty");
 				}
 				for (let i = 0; i < stacksToPop; i++) {
 					const parent = context.currentSection.getParentSection();
@@ -415,6 +415,9 @@ export class SkriptFile extends SkriptSection {
 
 						this.parseResult.frequencyMatrix.push(mostValidContext.parseResult.frequencyMatrix);
 						indentData.finishLine();
+						if (indentData.current != indentData.correct) {
+							currentLineContext.addDiagnostic(0, indentData.current, "this line works when adjusting indentation. press ctrl + F to fix", DiagnosticSeverity.Information, "IntelliSkript->Indent->Amount")
+						}
 					}
 					//empty lines and comments should indentate like the lines below them
 					for (let suggestIndex = lastCodeLine + 1; suggestIndex <= currentLineIndex; suggestIndex++) {

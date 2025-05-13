@@ -29,7 +29,8 @@ export class ReflectExpressionSection extends ReflectPatternContainerSection {
 			case "remove": this.hasRemove = true; break;
 			case "remove all": this.hasRemoveAll = true; break;
 			//TODO: parse
-			case "usable in": keywordEnd = "usable in".length; break;
+			case "usable in": break;
+			case "parse": break;
 			//set %type%
 			default: if (context.currentString.startsWith("set ")) {
 				this.parseType(context, 'set '.length);
@@ -53,6 +54,11 @@ export class ReflectExpressionSection extends ReflectPatternContainerSection {
 			if (parsedType) {
 				this.returnType.possibleTypes.push(parsedType);
 			}
+		}
+		else if (context.currentString.startsWith("loop of: ")) {
+			context.addToken(TokenTypes.keyword, 0, "loop of: ".length);
+			let parsedType = this.parseType(context, "loop of: ".length) ?? this.getTypeData("object");
+			//TODO: incorporate loop type
 		}
 		else super.processLine(context);
 

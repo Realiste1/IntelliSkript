@@ -7,7 +7,7 @@ import { ReflectPatternContainerSection } from './ReflectPatternContainerSection
 export class ReflectConditionSection extends ReflectPatternContainerSection {
 	static patternType = PatternType.condition;
 	createSection(context: SkriptContext): SkriptSection | undefined {
-		const regex = /^(check)$/;
+		const regex = /^(check|parse|usable in)$/;
 		const result = regex.exec(context.currentString);
 		const bool = this.getTypeData("boolean");
 		if (bool) {

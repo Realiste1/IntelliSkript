@@ -1,16 +1,16 @@
 import { DiagnosticSeverity } from 'vscode-languageserver/browser';
+import { PatternType } from '../../../pattern/PatternType';
 import { TokenTypes } from '../../../TokenTypes';
 import type { SkriptContext } from '../../validation/SkriptContext';
 import {
 	SkriptSection
 } from "../skriptSection/SkriptSection";
 import { ReflectPatternContainerSection } from './ReflectPatternContainerSection';
-import { PatternType } from '../../../pattern/PatternType';
 
 export class ReflectEffectSection extends ReflectPatternContainerSection {
 	static patternType = PatternType.effect;
 	createSection(context: SkriptContext): SkriptSection | undefined {
-		const regex = /^(parse|trigger)$/;
+		const regex = /^(usable in|parse|trigger)$/;
 		const result = regex.exec(context.currentString);
 
 		if (result) {

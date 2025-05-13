@@ -157,6 +157,8 @@ on break of stone:
 	set {_percent} to round({_progress} / {_total} * 100, 2)
 	create bossbar titled "Mining Progress" and id "Mining Progress" for all players with progress {_percent}
 	1
+	if axoserver named "" exists:
+		
 	axoserver of {_test}
 
 effect:

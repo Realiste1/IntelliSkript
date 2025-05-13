@@ -11,8 +11,11 @@ export class ReflectEventSection extends ReflectPatternContainerSection {
 	static override patternType: PatternType = PatternType.event;
 
 	createSection(context: SkriptContext): SkriptSection | undefined {
-		if (context.currentString == "check")
-			return new SkriptSection(this, context);
+		switch (context.currentString) {
+			case "parse":
+			case "check":
+				return new SkriptSection(this, context);
+		}
 
 		return super.createSection(context);
 	}
