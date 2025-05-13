@@ -38,8 +38,7 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 
 	invalidateDependents(file: SkriptFile) {
 		// the document has changed
-		// all files coming 'after' this file need to be updated.
-		// not only the previous dependents, because it could be that other files will get a dependency now
+		// all files validated 'after' this file need to be updated.
 		let found = false;
 		if (file.parent instanceof SkriptFolder) {
 			for (const folderFile of file.parent.files) {
@@ -50,9 +49,16 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 					folderFile.invalidate();
 				}
 			}
-			//invalidate all subfolders
-			for (const childFolder of file.parent.children) {
-				childFolder.invalidate();
+			//invalidate all parent subfolders which come after the parent folder of this file
+			//'aunts and uncles'
+			let currentParent: SkriptFolderContainer = file.parent;
+			while (currentParent instanceof SkriptFolder) {
+
+				for (const uncleFolder of currentParent.parent.children) {
+					if (uncleFolder == currentParent) break;
+					uncleFolder.invalidate();
+				}
+				currentParent = currentParent.parent;
 			}
 
 			if (file.parent == this.addonFolder) {
@@ -94,21 +100,12 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 
 			if (mainSubFolder != this.addonFolder) {
 				//first of all, validate the entire addon folder
-				await this.addonFolder.validate();
+				await this.addonFolder.validateFiles();
 			}
 
 			//when not, this file is a loose file
-			if (file.parent instanceof SkriptFolder) {
-
-				let currentFolder = mainSubFolder;
-				//recursively validate parent folders until we are at the file
-				while (currentFolder && file.parent != currentFolder) {
-					await currentFolder.validate();
-					currentFolder = currentFolder.getSubFolderByUri(uri);
-				}
-				//finally, validate the folder itself
-				//regenerate patterns, but without those of the old file to avoid double definitions
-				await currentFolder?.validate(file);
+			if (mainSubFolder) {
+				await mainSubFolder.validateRecursively(file);
 			}
 			else {
 				await file.validate();

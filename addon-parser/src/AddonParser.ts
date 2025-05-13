@@ -2,11 +2,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Parser, RepoDirectory } from './Parser';
 import { ParseFile } from './ParseFile';
+import { Parser } from './Parser';
 
-
-export const ServerAssetsDirectory = path.join(RepoDirectory, 'server', 'src', 'assets');
 export const skriptFileHeader = "#AUTOMATICALLY GENERATED SKRIPT FILE\n#COPYRIGHT JOHN HEIKENS\n#https://github.com/JohnHeikens/IntelliSkript\n"
 
 export class GeneralJson {
@@ -55,11 +53,13 @@ export class fileJson {
 	events?: EventJson[];
 	functions?: FunctionJson[];
 }
+
 export class AddonParser extends Parser {
 
 	static override idDirectory = path.join(this.parserDirectory, "json");
 	static inheritanceByID = new Map<string, string>();
 	static allTypes = new Map<string, TypeJson>();
+	static replacements = new Map<string, string>();
 
 	//this function makes type names match better with the ones defined in the inheritance text file
 	static normalizeName(name: string): string {
@@ -247,6 +247,10 @@ export class AddonParser extends Parser {
 			str += "function " + f.patterns[0] + " :: " + f['return type'] + ":\n";
 			str += "#\t(internal code)\n";
 		})
+		for (let replacement of this.replacements) {
+			str = str.replace(replacement[0], replacement[1]);
+		}
+
 		return str;
 	}
 	static override ParseFile(file: ParseFile): ParseFile {
@@ -256,10 +260,21 @@ export class AddonParser extends Parser {
 		return { content: parseResult, fileName: inputFileName + '.sk' };
 	}
 	static override ParseFiles(): string {
+		const standardCodeString = fs.readFileSync("StandardFunctions.sk", "utf8");
+		let currentElemBuilding: { line: string, replacement: string } | undefined;
+		for (const line of standardCodeString.split(/\r\n|\r(?!\n)|\n/g)) {
+			if (line.endsWith(':') && line.match(/^\S/)) {
+				if (currentElemBuilding != undefined)
+					this.replacements.set(currentElemBuilding.line, currentElemBuilding.replacement);
+				currentElemBuilding = { line: line, replacement: line };
 
-		if (!fs.existsSync(ServerAssetsDirectory)) {
-			fs.mkdirSync(ServerAssetsDirectory, { recursive: true });
+			}
+			else if (currentElemBuilding != undefined && line != '') {
+				currentElemBuilding.replacement += '\n' + line;
+			}
 		}
+		this.replacements.set(currentElemBuilding.line, currentElemBuilding.replacement);
+
 		const text = fs.readFileSync(path.join(this.parserDirectory, "inheritance.txt"), "utf8").toLocaleLowerCase();
 		for (const line of text.split('\n')) {
 			const parts = line.trim().split('#')[0].split('->');

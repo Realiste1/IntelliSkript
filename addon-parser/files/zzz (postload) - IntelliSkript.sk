@@ -5,9 +5,6 @@
 expression (true|false):
     return type: boolean
 
-#literal number
-expression <(-){0,1}(\d+)(?:\.(\d+))?(?!\.)>:
-    return type: number
 
 expression %object% (is|=) %object%:
     return type: boolean
@@ -30,32 +27,6 @@ expression %number% times:
 
 expression [%number%] (tick|second|minute|hour|day|month|year)[s]:
     return type: timespan
-
-
-# arithmetic
-expression:
-    patterns:
-        (%object%)[ ]+[ ](%object%)
-        (%object%)[ ]+[ ]%object%
-        %object%[ ]+[ ](%object%)
-        %object%[ ]+[ ]%object%
-        (%object%)[ ]-[ ](%object%)
-        (%object%)[ ]-[ ]%object%
-        %object%[ ]-[ ](%object%)
-        %object%[ ]-[ ]%object%
-        (%object%)[ ]*[ ](%object%)
-        (%object%)[ ]*[ ]%object%
-        %object%[ ]*[ ](%object%)
-        %object%[ ]*[ ]%object%
-        (%object%)[ ]/[ ](%object%)
-        (%object%)[ ]/[ ]%object%
-        %object%[ ]/[ ](%object%)
-        %object%[ ]/[ ]%object%
-        (%object%)[ ]^[ ](%object%)
-        (%object%)[ ]^[ ]%object%
-        %object%[ ]^[ ](%object%)
-        %object%[ ]^[ ]%object%
-    return type: object
 
 effect wait %timespan%:
     trigger:

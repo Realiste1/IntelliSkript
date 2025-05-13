@@ -41,3 +41,7 @@ type integer:
 
 #used in the expression 'name of'
 type named:
+
+#literal number
+expression <(-){0,1}(\d+)(?:\.(\d+))?(?!\.)>:
+    return type: number

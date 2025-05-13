@@ -1,11 +1,12 @@
 on click:
+	set {_product} to 1 * 3
 
 on click:
 
 effect:
 	patterns:
 		teststatic %*object%
-		
+
 command /backpack:
 	aliases: bp
 	trigger:
@@ -19,8 +20,8 @@ command /backpack:
 			add 1 to {_c}
 			add 1 to {_cc}
 		set {_c} to 1
-		
-		
+
+
 on inventory close:
 	send "%event-player%"
 	if the name of event-player's current inventory is "&8Backpack":
@@ -30,10 +31,10 @@ on inventory close:
 			add slot {_c} of event-player's current inventory to {%script%::Global::%event-player's uuid%::*}
 			add 1 to {_c}
 			add 1 to torchflower seeds
-			
+
 function find2BlockGap(xcoord: number,zcoord: number):: location:
 	return {_xcoord}
-	
+
 on right click holding lead:
 	drop apple named "a" {_} {_}
 	set a "b" to {_c}
@@ -45,20 +46,20 @@ on right click holding lead:
 	set {_test} to player
 	give {_test} apple
 	set {_test} to apple named "a"
-	
+
 expression:
 	patterns:
 		b
 	return type: number
-	
+
 effect:
 	patterns:
 		a %number% c
-		
+
 effect:
 	patterns:
 		a f c
-		
+
 on join:
 	a b c
 	a f c
@@ -68,14 +69,14 @@ on join:
 	1 tick
 	wait 1 tick
 	wait {_test} 
-	
+
 function shop(arg1:string):
 	uuid of {_test}
 	return "%...JavaChar.toChars(expr-1)%"
-	
+
 expression test[(]%number%[)]:
 	trigger:
-	
+
 on rightclick:
 	wait 1 tick
 	wait testtype.testfunc() tick
@@ -86,7 +87,7 @@ on rightclick:
 	loop all players:
 		if distance between the player and loop-player is smaller than 5:
 			apply blindness 5 to loop-player for 5 seconds
-			
+
 on rightclick:
 	set {_test} to {_}
 	
@@ -115,7 +116,7 @@ on right click holding lead:
 		spawn {_e} parsed as entity type at player with nbt {_t}
 		set string tag "petleash" of nbt compound of player's tool to "null"
 		delete string tag "captured" of nbt compound of player's tool
-		
+
 command /AtmosSword:
 	permission: op
 	permission message: &cNuh uh
@@ -123,8 +124,8 @@ command /AtmosSword:
 		set {_test} to netherite sword
 		give {_test} {_blah} named "&lAtmos Sword"
 		give {_test} netherite sword named "&lAtmos Sword"
-		
-		
+
+
 on rightclick:
 	if player's item is "&lAtmos Sword":
 		loop all players:
@@ -132,17 +133,17 @@ on rightclick:
 				apply blindness 5 to loop-player for 5 seconds
 on click:
 	summon pig at location of block
-	
+
 on break of lightning rod:
 	set {_test} to a furnace named "Advanced Furnace"
 	drop a furnace named "Advanced Furnace" {_} {_}
-	
+
 expression <(-){0,1}\d+(\.(\d+))?(?!\.)>:
 	return type: number
-	
+
 offline player property axoserver: 
 	get:
-	
+
 effect:
 	trigger:
 on break of stone:
@@ -157,27 +158,27 @@ on break of stone:
 	create bossbar titled "Mining Progress" and id "Mining Progress" for all players with progress {_percent}
 	1
 	axoserver of {_test}
-	
+
 effect:
 	patterns:
 		%commandsender% blah
 	trigger:
-	
+		
 		1 tick
 		{_a}+{_b}
-		
+
 expression:
 	set string:
 	
 	set number:
-	
+
 effect [make|let] chuckle note %string%:
 	trigger:
 		channel with id {_test}
 		post {_test} to {_test}
 condition %offline player% is on this server:
 	check:
-	
+		
 		{_a}+{_b}
 		{_a} + {_b}
 		1 tick
@@ -203,17 +204,17 @@ condition %offline player% is on this server:
 		
 		if expr-1 doesn't have permission "bungeecord.server.%{-servername}%":
 			loop 10 times:
-			
+		
 		{_test} parsed as {_t}
 		
 		send "" to {_test}
 		{_test} parsed as {_t}
 		send "searchstring: %{_searchstring}%"
-		
+
 effect axosend %string% to %offline player%:
 	trigger:
 		if expr-2 is on this server:
-		
+
 on break of lightning rod:
 	drop a furnace named "Advanced Furnace" at location of event-block
 	if name of player's tool is "Advanced Furnace":
@@ -239,13 +240,13 @@ on break of lightning rod:
 		add 1 to {_topLocation}
 		set {_test} to "%test%"
 		1 tick
-		
-	wait 1 tick
 	
+	wait 1 tick
+
 on load:
 	set {_advancedFurnace} to a furnace named "Advanced Furnace"
 	add {_advancedFurnace} to player's inventory
-	
+
 on place of furnace:
 	if name of player's tool is "Advanced Furnace":
 		set {_location} to location of event-block
@@ -255,7 +256,7 @@ on place of furnace:
 		set {_topLocation} to {_location}
 		add 1 to {_topLocation}'s Y-coordinate
 		set block at {_topLocation} to lightning rod
-		
+
 on break of furnace:
 	if name of event-block is "Advanced Furnace":
 		cancel event
@@ -265,7 +266,7 @@ on break of furnace:
 		if block at {_topLocation} is lightning rod:
 			set block at {_topLocation} to air
 		set block at location of event-block to air
-		
+
 on break of lightning rod:
 	set {_belowLocation} to location of event-block
 	subtract 1 from {_belowLocation}'s Y-coordinate
@@ -274,7 +275,7 @@ on break of lightning rod:
 		drop a furnace named "Advanced Furnace" at {_belowLocation}
 		set block at {_belowLocation} to air
 		set block at location of event-block to air
-		
+	
 	set {_progstr} to "&7Progress: "
 	if {dailychestsforstreak::%{_p}%} <_3:
 		loop {dailychestsforstreak::%{_p}%} times:
@@ -288,3 +289,27 @@ on break of lightning rod:
 	if {rewardcheststreak::%{_p}%} < 5:
 		add "&7Next milestone: &65 Days" to {_lore::*}
 	else:
+
+function product(ns: numbers) :: Number:
+	set {_product} to 1 * 3
+	loop {_ns::*}:
+		set {_product} to {_product} * loop-number
+	return {_product}
+
+function sum(ns: numbers) :: Number:
+	set {_sum} to 0
+	loop {_ns::*}:
+		add loop-number to {_sum}
+	return {_sum}
+
+function tan(n: number) :: Number:
+	return sin(n) / cos(n)
+
+function median(numbers: numbers) :: Number:
+	set {_medianIndex} to size of {_numbers::*} / 2
+	set {_firstIndex} to floored {_medianIndex}
+	if {_firstIndex} is {_medianIndex}:
+		return {_numbers::%{_medianIndex}%}
+	else:
+		#take the average of two numbers
+		return ({_numbers::%{_firstIndex}%} + {_numbers::%{_firstIndex} + 1%}) * 0.5

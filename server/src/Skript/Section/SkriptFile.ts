@@ -265,7 +265,7 @@ export class SkriptFile extends SkriptSection {
 		let inMultiLineComment = false;
 
 		/**the index of the last line which contained code, so no lines with comments */
-		let lastCodeLine = 0;
+		let lastCodeLine = -1;
 
 		const indentData = new IndentData();
 
@@ -414,13 +414,15 @@ export class SkriptFile extends SkriptSection {
 						}
 
 						this.parseResult.frequencyMatrix.push(mostValidContext.parseResult.frequencyMatrix);
-						lastCodeLine = currentLineIndex;
 						indentData.finishLine();
 					}
+					//empty lines and comments should indentate like the lines below them
+					for (let suggestIndex = lastCodeLine + 1; suggestIndex <= currentLineIndex; suggestIndex++) {
+						this.suggestedIndentation[suggestIndex] = indentData.correct;
+					}
+					lastCodeLine = currentLineIndex;
 				}
 
-				//empty lines and comments should indentate like the lines above them
-				this.suggestedIndentation[currentLineIndex] = indentData.correct;
 
 				if (trimInfo.commentIndex != -1) {
 					currentLineContext.addToken(TokenTypes.comment, trimInfo.commentIndex, currentLine.length - trimInfo.commentIndex);

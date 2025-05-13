@@ -4,6 +4,7 @@ import { SkriptSectionGroup } from '../section/SkriptSectionGroup';
 import type { SkriptFolder } from './SkriptFolder';
 
 export class SkriptFolderContainer extends SkriptSectionGroup {
+	/**child folders, ordered alphabetically */
     override children: SkriptFolder[] = [];
     getSubFolderByUri(uri: URI): SkriptFolder | undefined {
         //const resolvedUri = resolveUri(uri);

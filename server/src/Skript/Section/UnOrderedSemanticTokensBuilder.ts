@@ -1,6 +1,6 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, SemanticTokens, SemanticTokensBuilder, SemanticTokensDelta } from 'vscode-languageserver/browser';
-import * as IntelliSkriptConstants from '../../IntelliSkriptConstants';
+import { IsDebugMode } from '../../IntelliSkriptConstants';
 import { TokenModifiers } from '../../TokenModifiers';
 import { TokenTypes } from '../../TokenTypes';
 
@@ -47,7 +47,7 @@ export class SemanticTokenLine {
 		);
 	}
 	push(token: SemanticToken): void {
-		const checkTokens = IntelliSkriptConstants.IsDebugMode && true;
+		const checkTokens = IsDebugMode && true;
 		function positionToString(position: Position) {
 			return `line ${position.line}, char ${position.character}`;
 		}

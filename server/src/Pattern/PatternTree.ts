@@ -13,9 +13,9 @@ import { removeDuplicates } from "./removeDuplicates";
 
 import { SkriptTypeSection } from '../skript/section/custom/SkriptTypeSection';
 import { TokenModifiers } from '../TokenModifiers';
-import { TypeNode } from './patternTreeNode/TypeNode';
-import { StringNode } from './patternTreeNode/StringNode';
 import { RegExpNode } from './patternTreeNode/RegExpNode';
+import { StringNode } from './patternTreeNode/StringNode';
+import { TypeNode } from './patternTreeNode/TypeNode';
 
 //flags: U -> ungreedy, g -> global. percentages are escapable with a slash.
 const argumentRegExp = /(?<!\\)\%(.*?)(?<!\\)\%/g;
@@ -291,7 +291,11 @@ export class PatternTree {
 					}
 					//string node
 					else {
-						if (char == '\\') char = pattern[i + 1];
+						if (char == '\\') {
+							//we can skip all checking and directly add this as string node
+							i++;
+							char = pattern[i];
+						}
 						addNode(currentSplitNode.stringOrderedChildren, char, () => new StringNode(char));
 					}
 				}

@@ -3,9 +3,9 @@
 		"module": "commonjs",
 		"target": "es2020",
 		"lib": ["es2020", "WebWorker"],
-		"rootDir": "src",
+		"rootDir": "..",
 		"sourceMap": true
 	},
-	"include": ["src"],
+	"include": ["src", "../shared", "../server/src/IntelliSkriptConstants.ts"],
 	"exclude": ["node_modules", ".vscode-test-web"]
 }

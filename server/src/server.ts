@@ -1,7 +1,7 @@
 import { ChangeAnnotation, CodeAction, CodeActionKind, CompletionItem, CompletionItemKind, CompletionParams, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, InsertTextFormat, MarkupContent, MarkupKind, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
-import * as IntelliSkriptConstants from './IntelliSkriptConstants';
+import { IsDebugMode } from './IntelliSkriptConstants';
 import { MatchProgress } from './pattern/match/MatchProgress';
 import { PatternTreeNode } from './pattern/patternTreeNode/PatternTreeNode';
 import { removeDuplicates } from './pattern/removeDuplicates';
@@ -101,7 +101,7 @@ export class Server {
 
 			//works for the client only
 			//const myExtDir = vscode.extensions.getExtension ("JohnHeikens.IntelliSkript").extensionPath;
-			if (IntelliSkriptConstants.IsDebugMode) {
+			if (IsDebugMode) {
 				await Sleep(5000);//give the debugger time to start
 			}
 
@@ -681,7 +681,7 @@ export class Server {
 					const parsedContext = SkriptFile.validateCodeLine(trimmedContext, section, indentData);
 					for (const [patternCall, node] of parsedContext.parseResult.patternsParsed) {
 						if (node.end == editPos) {
-							const wordToComplete = trimmedContext.currentString.substring(trimmedContext.currentString.lastIndexOf(' ') + 1);
+							const wordToComplete = trimmedContext.currentString.substring(trimmedContext.currentString.lastIndexOf(' ') + 1, editPos - trimmedContext.currentPosition);
 							const completions = removeDuplicates(await this.getPossibleCompletions(parsedContext, patternCall));
 							let sortNumber = 0;
 							for (const completion of completions) {
