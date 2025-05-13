@@ -38,16 +38,24 @@ export class SkriptFolder extends SkriptFolderContainer {
 			folder.invalidate();
 
 	}
-	/**
-	 *
-	 * @param endFile validate until this file is encountered
-	 */
-	async validateFiles(endFile?: SkriptFile): Promise<boolean> {
+
+	/**validate files recursively, until we find the file
+	 * @param endFile validate until this file is encountered */
+	async validateRecursively(endFile?: SkriptFile): Promise<boolean> {
 		//if the last file isn't validated, then we need to recalculate the patterns.
 		//when a file invalidates, all files after it invalidate too.
 		if (this.files.length == 0 || !this.files[this.files.length - 1].validated) {
 			const isAddonFolder = this.parent instanceof SkriptWorkSpace && this.parent.addonFolder === this;
 			this.scope = isAddonFolder ? new Scope(undefined) : this.parent instanceof SkriptFolder ? this.parent.scope : new Scope(this.parent.getScope());
+
+			//first, validate all folders
+			for (const child of this.children) {
+				if (await child.validateRecursively(endFile)) {
+					return true;
+				}
+			}
+
+			//then, validate all files
 			for (const file of this.files) {
 				//this way, a file won't know what is previous to it
 				if (!file.validated)
@@ -58,19 +66,8 @@ export class SkriptFolder extends SkriptFolderContainer {
 					return true;
 			}
 		}
-		return false;
-	}
 
-	/**validate files recursively, until we find the file */
-	async validateRecursively(endFile?: SkriptFile): Promise<boolean> {
-		//first, validate all folders
-		for (const child of this.children) {
-			if (await child.validateRecursively(endFile)) {
-				return true;
-			}
-		}
-		//then, validate all files
-		return this.validateFiles();
+		return false;
 	}
 
 	constructor(parent: SkriptFolderContainer, uri: URI) {

@@ -39,24 +39,35 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 	invalidateDependents(file: SkriptFile) {
 		// the document has changed
 		// all files validated 'after' this file need to be updated.
-		let found = false;
 		if (file.parent instanceof SkriptFolder) {
+			let fileFound = false;
 			for (const folderFile of file.parent.files) {
 				if (folderFile == file) {
-					found = true;
+					fileFound = true;
 				}
-				if (found) {
+				if (fileFound) {
 					folderFile.invalidate();
 				}
 			}
 			//invalidate all parent subfolders which come after the parent folder of this file
 			//'aunts and uncles'
 			let currentParent: SkriptFolderContainer = file.parent;
+			let folderFound = false;
 			while (currentParent instanceof SkriptFolder) {
+				if (currentParent != file.parent) {
+					for (const parentFile of currentParent.files) {
+						parentFile.invalidate();
+					}
+				}
 
 				for (const uncleFolder of currentParent.parent.children) {
-					if (uncleFolder == currentParent) break;
-					uncleFolder.invalidate();
+					if (folderFound) {
+						uncleFolder.invalidate();
+					}
+					//don't invalidate the found folder
+					if (uncleFolder == currentParent) {
+						folderFound = true;
+					}
 				}
 				currentParent = currentParent.parent;
 			}
@@ -100,7 +111,7 @@ export class SkriptWorkSpace extends SkriptFolderContainer {
 
 			if (mainSubFolder != this.addonFolder) {
 				//first of all, validate the entire addon folder
-				await this.addonFolder.validateFiles();
+				await this.addonFolder.validateRecursively();
 			}
 
 			//when not, this file is a loose file
