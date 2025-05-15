@@ -42,10 +42,20 @@
 				"kind": "build",
 				"isDefault": true
 			}
-			//"presentation": {
-			//	"panel": "dedicated",
-			//	"reveal": "never"
-			//},
 		},
+		{
+			"label": "publish extension",
+			"type": "shell",
+			"command": "${workspaceFolder}\\publisher\\publish.bat",
+			//"options": {
+			//	"shell": {
+			//		"executable": "cmd.exe",
+			//		"args": [
+			//			"/d",
+			//			"/c"
+			//		]
+			//	}
+			//},
+		}
 	]
 }

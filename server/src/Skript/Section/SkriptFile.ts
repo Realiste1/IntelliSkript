@@ -21,6 +21,7 @@ import { ReflectEventSection } from './reflect/ReflectEventSection';
 import { ReflectExpressionSection } from './reflect/ReflectExpressionSection';
 import { ReflectImportSection } from './reflect/ReflectImportSection';
 import { ReflectPatternContainerSection } from './reflect/ReflectPatternContainerSection';
+import { ReflectPatternSection } from './reflect/ReflectPatternSection';
 import { ReflectPropertySection } from './reflect/ReflectPropertySection';
 import { ReflectSectionSection } from './reflect/ReflectSectionSection';
 import { SkriptAliasesSection } from './SkriptAliasesSection';
@@ -367,7 +368,9 @@ export class SkriptFile extends SkriptSection {
 
 					if (!checkSection(expectedSection)) {
 						/**use this set to make sure we don't check the same type of section two times (in most cases, it's just a huge performance drain) */
-						const passedTypes = new Set<string>([expectedSection.constructor.name]);
+						//we won't check for a pattern section, because that would be 'cheating', as almost no validation will be done there.
+						//'not good? ok, let me convert it to a pattern'
+						const passedTypes = new Set<string>([ReflectPatternSection.name, expectedSection.constructor.name]);
 						expectedSection = trimmedContext.currentSection;
 						let newMostValid = indentData.expected;
 						//loop over other possibilities, starting by the max indent possible at the moment and decrementing to the minimum

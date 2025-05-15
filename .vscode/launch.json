@@ -55,9 +55,6 @@
 			],
 			"program": "${workspaceFolder}/addon-parser/src/index.ts",
 			"cwd": "${workspaceFolder}/addon-parser",
-			//"args": [
-			//	"${workspaceFolder}/addon-parser/src/index.ts"
-			//],
 			"preLaunchTask": "buildaddonparser",
 			"outFiles": [
 				"${workspaceFolder}/addon-parser/out/**/*.js"
