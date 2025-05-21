@@ -1,4 +1,4 @@
-import { ChangeAnnotation, CodeAction, CodeActionKind, CompletionItem, CompletionItemKind, CompletionParams, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, InsertTextFormat, MarkupContent, MarkupKind, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
+import { ChangeAnnotation, CodeAction, CodeActionKind, CompletionItem, CompletionItemKind, CompletionParams, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, InsertTextFormat, MarkupContent, MarkupKind, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SignatureHelp, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { IsDebugMode } from './IntelliSkriptConstants';
@@ -154,8 +154,9 @@ export class Server {
 						codeActionProvider: true,
 						//textDocumentSync: TextDocumentSyncKind.Full,
 						hoverProvider: true,
-						//signatureHelpProvider: {
-						//},
+						signatureHelpProvider: {
+							triggerCharacters: ['(', ',']
+						},
 						//referencesProvider: { workDoneProgress: true },
 						//documentHighlightProvider: true,
 						//documentSymbolProvider: true,
@@ -702,20 +703,22 @@ export class Server {
 		// the completion list.
 		connection.onCompletionResolve(
 			(item: CompletionItem): CompletionItem => {
-				if (item.data === 1) {
-					item.detail = 'create a function';
-					item.documentation = 'create a function';
-				} else if (item.data === 2) {
-					item.detail = 'create a command';
-					item.documentation = 'create a command';
-				}
-				else {
-					item.detail = 'test';
-					item.documentation = 'test';
-				}
+				//use item.data and give more information
+				item.detail = 'intelliskript';
+				item.documentation = 'completion by IntelliSkript';
 				return item;
 			}
 		);
+
+		connection.onSignatureHelp(async (item): Promise<SignatureHelp> => {
+			const unlock = await this.currentWorkSpace.mutex.lock();
+			const file = this.currentWorkSpace.getSkriptFileByUri(URI.parse(item.textDocument.uri));
+			if (file) {
+				file.getScope()?.functions.
+			}
+			unlock();
+			return { signatures: [{ label: 'Hello World Signature' }], activeSignature: 0, activeParameter: 0 };
+		});
 
 		// Make the text document manager listen on the connection
 		// for open, change and close text document events

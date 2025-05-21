@@ -464,7 +464,6 @@ export class SkriptFile extends SkriptSection {
 		//when we find something which is probably the start of a new block like 'expression' or 'property', we set the recommended index to 0.
 		//inside of functions, we don't modify indentation as long as it's safe (you may indentate 2 tabs backward, but not forward for example)
 		const lines = this.text.split('\n');
-		let recommendedIndentationLength = 0;
 		for (const [index, line] of lines.entries()) {
 			const currentIndentationLength = IndentData.getIndentationEndIndex(line);
 			const trimInfo = SkriptFile.trimLineWithoutComments(line);
@@ -473,10 +472,13 @@ export class SkriptFile extends SkriptSection {
 			if (currentIndentation != recommendedIndentation) {
 				edits.push(TextEdit.replace(Range.create({ line: index, character: 0 }, { line: index, character: currentIndentation.length }), recommendedIndentation));
 			}
-			if (trimInfo.trimmedLine.endsWith(':')) {
-				recommendedIndentationLength++;
+			if (trimInfo.commentIndex != -1) {
+				//also format comments. make sure every comment has some space after the '#'. when it hasn't, a single space is inserted.
+				const charBehindHashtag = line[trimInfo.commentIndex + 1];
+				if (charBehindHashtag != undefined && charBehindHashtag.match(/\S/)) {
+					edits.push(TextEdit.insert({ line: index, character: trimInfo.commentIndex + 1 }, " "));
+				}
 			}
-
 		}
 		return edits;
 	}
