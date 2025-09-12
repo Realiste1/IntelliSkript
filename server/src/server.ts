@@ -714,10 +714,12 @@ export class Server {
 			const unlock = await this.currentWorkSpace.mutex.lock();
 			const file = this.currentWorkSpace.getSkriptFileByUri(URI.parse(item.textDocument.uri));
 			if (file) {
-				file.getScope()?.functions.
+				//file.getScope()?.functions.
 			}
 			unlock();
-			return { signatures: [{ label: 'Hello World Signature' }], activeSignature: 0, activeParameter: 0 };
+			return { signatures: [
+				//{ label: 'Hello World Signature' }
+			], activeSignature: 0, activeParameter: 0 };
 		});
 
 		// Make the text document manager listen on the connection

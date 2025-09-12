@@ -1,4 +1,7 @@
 import { DiagnosticSeverity, Location } from 'vscode-languageserver/browser';
+import { PatternData, TypeData } from '../../pattern/data/PatternData';
+import { PatternType } from '../../pattern/PatternType';
+import { TokenModifiers } from '../../TokenModifiers';
 import { TokenTypes } from '../../TokenTypes';
 import { SkriptVariable } from '../storage/SkriptVariable';
 import { SkriptTypeState } from '../storage/type/SkriptTypeState';
@@ -6,10 +9,6 @@ import { SkriptContext } from '../validation/SkriptContext';
 import {
 	SkriptSection
 } from "./skriptSection/SkriptSection";
-import { PatternData } from '../../pattern/data/PatternData';
-import { PatternType } from '../../pattern/PatternType';
-import { TypeData } from '../../pattern/data/PatternData';
-import { TokenModifiers } from '../../TokenModifiers';
 export class SkriptFunction extends SkriptSection {
 	//the name of this function
 	name: string;
@@ -17,7 +16,7 @@ export class SkriptFunction extends SkriptSection {
 	//context.currentString should be 'function example(a: string, b: number) :: string' for example
 	constructor(parent: SkriptSection, context: SkriptContext) {
 		super(parent, context);
-		const regex = /^function ([a-zA-Z0-9_]{1,})\((.*)\)(?:(?: *:: *| {1,}returns {1,})(.*?))$/; // /function ([a-zA-Z0-9]{1,})\(.*)\) :: (.*)/;
+		const regex = /^function ([a-zA-Z0-9_]{1,})\((.*)\)(?:(?: *:: *| {1,}returns {1,})(.*?))?$/; // /function ([a-zA-Z0-9]{1,})\(.*)\) :: (.*)/;
 		//(,|and|)){1,}\)
 		const result = regex.exec(context.currentString);
 		if (result == null) {
