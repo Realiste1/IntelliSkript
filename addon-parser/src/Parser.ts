@@ -1,6 +1,6 @@
-import * as path from 'path';
 import * as fs from 'fs';
-import { ParseFile } from './ParseFile';
+import * as path from 'path';
+import { ParseFile } from './parse-file';
 
 export const currentDirectory: string = __dirname;// out directory
 export const RepoDirectory = path.join(currentDirectory, "../..");

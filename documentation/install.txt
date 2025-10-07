@@ -1,0 +1,22 @@
+to get intelliskript working on another account i am doing these steps:
+- disable intelliskript extension if you have it installed
+- open github desktop
+- add -> clone repository... i select intelliskript (you can using URL)
+- startup vs code
+- open folder -> the repo folder (user/github/intelliskript)
+- terminal -> new terminal
+- npm install
+- run generate addon files from the debug configuration
+- start debugging by 
+
+make all relevant imports uppercase
+(import .* from ['"]\..*)\/([a-z])([^\/]*)([\/'"])
+$1/\U$2$3$4
+
+make all relevant imports lowercase at the start
+(import .* from ['"]\..*)\/([A-Z])([^\/\n]*)([\/'"])
+$1/\L$2$3$4
+
+make middle uppercase lowercase and add dashes for kebab-case
+(import .* from ['"]\..*)\/([a-z-]+)([A-Z])([a-z].+?)([\/'"])
+$1/$2-\L$3$4$5

@@ -5,7 +5,7 @@ out
 *.vsix
 *.cpuprofile
 *.map
-resourceFiles.ts
+resource-files.ts
 #for unsaved powerpoint presentations
 ~*
 publisher

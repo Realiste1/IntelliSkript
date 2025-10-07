@@ -1,20 +1,20 @@
 import { ChangeAnnotation, CodeAction, CodeActionKind, CompletionItem, CompletionItemKind, CompletionParams, Connection, DefinitionLink, Diagnostic, DidChangeConfigurationNotification, DocumentFormattingParams, DocumentSelector, Hover, InitializeParams, InitializeResult, InsertTextFormat, MarkupContent, MarkupKind, RequestType, SemanticTokensClientCapabilities, SemanticTokensLegend, SemanticTokensRegistrationOptions, SemanticTokensRegistrationType, SignatureHelp, SymbolInformation, SymbolKind, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind, WorkspaceChange } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
-import { IsDebugMode } from './IntelliSkriptConstants';
-import { MatchProgress } from './pattern/match/MatchProgress';
-import { PatternTreeNode } from './pattern/patternTreeNode/PatternTreeNode';
-import { removeDuplicates } from './pattern/removeDuplicates';
-import { SkriptPatternCall } from './pattern/SkriptPattern';
-import { SkriptFolder } from './skript/folder-container/SkriptFolder';
-import { SkriptWorkSpace } from './skript/folder-container/SkriptWorkSpace';
-import { SkriptFile } from './skript/section/SkriptFile';
-import { IndentData } from './skript/validation/IndentData';
-import { SkriptContext } from './skript/validation/SkriptContext';
-import { WordInfo } from './skript/validation/wordInfo';
-import { Deferred, Sleep } from './Thread';
-import { TokenModifiers } from './TokenModifiers';
-import { TokenTypes } from './TokenTypes';
+import { IsDebugMode } from './intelliskript-constants';
+import { MatchProgress } from './pattern/match/match-progress';
+import { PatternTreeNode } from './pattern/pattern-tree-node/pattern-tree-node';
+import { removeDuplicates } from './pattern/remove-duplicates';
+import { SkriptPatternCall } from './pattern/skript-pattern';
+import { SkriptFolder } from './skript/folder-container/skript-folder';
+import { SkriptWorkSpace } from './skript/folder-container/skript-workspace';
+import { SkriptFile } from './skript/section/skript-file';
+import { IndentData } from './skript/validation/indent-data';
+import { SkriptContext } from './skript/validation/skript-context';
+import { WordInfo } from './skript/validation/word-info';
+import { Deferred, Sleep } from './thread';
+import { TokenModifiers } from './token-modifiers';
+import { TokenTypes } from './token-types';
 
 export class Server {
 	initialized = new Deferred<void>();

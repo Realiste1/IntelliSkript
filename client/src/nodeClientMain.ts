@@ -1,7 +1,7 @@
 import { ExtensionContext, Uri } from 'vscode';
-import { startClient } from './client';
 import { BaseLanguageClient, LanguageClientOptions } from 'vscode-languageclient';
 import { LanguageClient, ServerOptions, TransportKind } from 'vscode-languageclient/node';
+import { startClient } from './client';
 
 export async function activate(context: ExtensionContext) {
 	return startClient(createLanguageClient, context);

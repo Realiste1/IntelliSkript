@@ -1,15 +1,15 @@
-import { SkriptTypeSection } from '../skript/section/custom/SkriptTypeSection';
-import { SkriptFunction } from "../skript/section/SkriptFunctionSection";
-import { SkriptTypeState } from '../skript/storage/type/SkriptTypeState';
-import { PatternData, TypeData } from "./data/PatternData";
-import { cloneProgress, MatchProgress } from './match/MatchProgress';
-import { MatchResult } from './match/matchResult';
-import { PatternMatch } from './match/PatternMatch';
-import { PatternTree } from './PatternTree';
-import { PatternTreeNode } from './patternTreeNode/PatternTreeNode';
-import { RegExpNode } from "./patternTreeNode/RegExpNode";
-import { canBeSubPattern, canHaveSubPattern, PatternType, SubstitutablePatterns } from './PatternType';
-import { SkriptPatternCall } from './SkriptPattern';
+import { SkriptTypeSection } from '../skript/section/custom/skript-type-section';
+import { SkriptFunction } from "../skript/section/skript-function-section";
+import { SkriptTypeState } from '../skript/storage/type/skript-type-state';
+import { PatternData, TypeData } from "./data/pattern-data";
+import { cloneProgress, MatchProgress } from './match/match-progress';
+import { MatchResult } from './match/match-result';
+import { PatternMatch } from './match/pattern-match';
+import { PatternTree } from './pattern-tree';
+import { PatternTreeNode } from './pattern-tree-node/pattern-tree-node';
+import { RegExpNode } from "./pattern-tree-node/regexp-node";
+import { canBeSubPattern, canHaveSubPattern, PatternType, SubstitutablePatterns } from './pattern-type';
+import { SkriptPatternCall } from './skript-pattern';
 
 /**a scope contains important things like pattern trees.
  * it can save local and global things, depending on the scope.

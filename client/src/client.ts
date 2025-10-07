@@ -1,7 +1,7 @@
 import { TelemetryReporter } from '@vscode/extension-telemetry';
 import { ExtensionContext, ExtensionMode, extensions, RelativePattern, TextDocumentContentProvider, Uri, window, workspace } from 'vscode';
 import { BaseLanguageClient, LanguageClientOptions, RevealOutputChannelOn } from 'vscode-languageclient';
-import { resourceFiles } from './assets/resourceFiles';
+import { resourceFiles } from './assets/resource-files';
 
 //the connection string is not sensitive, so we can just let it be here.
 const connectionString = "InstrumentationKey=3beed08d-7b3d-40cd-a129-05ff7cb7b2f9;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/;ApplicationId=bfda7f12-a9c2-4196-bd99-850fa9f29864";
